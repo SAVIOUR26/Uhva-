@@ -1,21 +1,35 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:better_player/better_player.dart';
+import 'package:media_kit/media_kit.dart';
+import 'package:media_kit_video/media_kit_video.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:provider/provider.dart';
+
 import '../../models/models.dart';
 import '../../providers/app_provider.dart';
 import '../../theme/app_theme.dart';
 
 class VodPlayerScreen extends StatefulWidget {
-  final VodStream vod;
-  const VodPlayerScreen({super.key, required this.vod});
+  /// Pass [vod] for movie playback or [directUrl] + [displayTitle] for
+  /// episode playback. At least one of [vod] or [directUrl] must be provided.
+  final VodStream? vod;
+  final String? directUrl;
+  final String? displayTitle;
+
+  const VodPlayerScreen({
+    super.key,
+    this.vod,
+    this.directUrl,
+    this.displayTitle,
+  });
 
   @override
   State<VodPlayerScreen> createState() => _VodPlayerScreenState();
 }
 
 class _VodPlayerScreenState extends State<VodPlayerScreen> {
-  BetterPlayerController? _controller;
+  late final Player _player;
+  late final VideoController _videoController;
 
   @override
   void initState() {
@@ -25,42 +39,38 @@ class _VodPlayerScreenState extends State<VodPlayerScreen> {
       DeviceOrientation.landscapeLeft,
       DeviceOrientation.landscapeRight,
     ]);
+    WakelockPlus.enable();
+    _player = Player();
+    _videoController = VideoController(_player);
     _init();
   }
 
   void _init() {
-    final provider = context.read<AppProvider>();
-    final url = provider.vodUrl(widget.vod.streamId, widget.vod.containerExtension);
-    final dataSource = BetterPlayerDataSource(
-      BetterPlayerDataSourceType.network,
-      url,
-    );
-    _controller = BetterPlayerController(
-      const BetterPlayerConfiguration(
-        autoPlay: true,
-        aspectRatio: 16 / 9,
-        autoDetectFullscreenAspectRatio: true,
-        allowedScreenSleep: false,
-        controlsConfiguration: BetterPlayerControlsConfiguration(
-          enableFullscreen: false,
-          enableMute: true,
-          enableSkips: true,
-          controlBarColor: Colors.black54,
-          iconsColor: Colors.white,
-          progressBarPlayedColor: UhvaColors.primary,
-          progressBarHandleColor: UhvaColors.primaryLight,
-        ),
-      ),
-      betterPlayerDataSource: dataSource,
-    );
+    final String url;
+    if (widget.directUrl != null) {
+      url = widget.directUrl!;
+    } else {
+      final provider = context.read<AppProvider>();
+      url = provider.vodUrl(
+          widget.vod!.streamId, widget.vod!.containerExtension);
+    }
+    _player.open(Media(url));
   }
 
   @override
   void dispose() {
-    _controller?.dispose();
+    WakelockPlus.disable();
+    _player.dispose();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
     super.dispose();
+  }
+
+  String get _title {
+    if (widget.displayTitle != null && widget.displayTitle!.isNotEmpty) {
+      return widget.displayTitle!;
+    }
+    return widget.vod?.name ?? '';
   }
 
   @override
@@ -69,17 +79,45 @@ class _VodPlayerScreenState extends State<VodPlayerScreen> {
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          if (_controller != null)
-            SizedBox.expand(
-              child: BetterPlayer(controller: _controller!),
-            ),
+          SizedBox.expand(
+            child: Video(controller: _videoController),
+          ),
+          // Top bar with back button + title
           Positioned(
-            top: 36,
-            left: 8,
-            child: IconButton(
-              icon: const Icon(Icons.arrow_back_ios_new,
-                  color: Colors.white, size: 20),
-              onPressed: () => Navigator.pop(context),
+            top: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(4, 32, 16, 16),
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Colors.black87, Colors.transparent],
+                ),
+              ),
+              child: Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.arrow_back_ios_new,
+                        color: Colors.white, size: 20),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                  if (_title.isNotEmpty)
+                    Expanded(
+                      child: Text(
+                        _title,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                ],
+              ),
             ),
           ),
         ],

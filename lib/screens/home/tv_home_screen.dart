@@ -7,6 +7,8 @@ import '../../models/models.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/common/uhva_logo.dart';
 import '../player/player_screen.dart';
+import '../series/series_screen.dart';
+import '../vod/vod_screen.dart';
 
 class TvHomeScreen extends StatefulWidget {
   const TvHomeScreen({super.key});
@@ -18,7 +20,36 @@ class TvHomeScreen extends StatefulWidget {
 class _TvHomeScreenState extends State<TvHomeScreen> {
   int _navIndex = 0;
   LiveChannel? _focusedChannel;
-  final _navItems = ['Live TV', 'Movies', 'Favourites', 'Search', 'Settings'];
+  final _navItems = ['Live TV', 'Movies', 'Series', 'Favourites', 'Search', 'Settings'];
+
+  Widget _buildContent(AppProvider provider) {
+    switch (_navIndex) {
+      case 0:
+        return _TvLiveContent(
+          provider: provider,
+          onFocus: (ch) => setState(() => _focusedChannel = ch),
+          onSelect: (ch) {
+            provider.addToHistory(ch);
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => PlayerScreen(channel: ch)),
+            );
+          },
+        );
+      case 1:
+        return const VodScreen();
+      case 2:
+        return const SeriesScreen();
+      default:
+        return Center(
+          child: Text(
+            _navItems[_navIndex],
+            style: const TextStyle(
+                color: UhvaColors.onSurfaceMuted, fontSize: 22),
+          ),
+        );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -31,7 +62,11 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
           _TvSideNav(
             items: _navItems,
             selectedIndex: _navIndex,
-            onSelect: (i) => setState(() => _navIndex = i),
+            onSelect: (i) {
+              setState(() => _navIndex = i);
+              if (i == 1) provider.loadVod();
+              if (i == 2) provider.loadSeries();
+            },
           ),
           const VerticalDivider(width: 0),
           // ── Content area ───────────────────────────────────────────────
@@ -41,26 +76,7 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
               children: [
                 _TvTopBar(channel: _focusedChannel),
                 Expanded(
-                  child: _navIndex == 0
-                      ? _TvLiveContent(
-                          provider: provider,
-                          onFocus: (ch) => setState(() => _focusedChannel = ch),
-                          onSelect: (ch) {
-                            provider.addToHistory(ch);
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (_) => PlayerScreen(channel: ch)),
-                            );
-                          },
-                        )
-                      : Center(
-                          child: Text(
-                            _navItems[_navIndex],
-                            style: const TextStyle(
-                                color: UhvaColors.onSurfaceMuted, fontSize: 22),
-                          ),
-                        ),
+                  child: _buildContent(provider),
                 ),
               ],
             ),
@@ -86,6 +102,7 @@ class _TvSideNav extends StatelessWidget {
     const icons = [
       Icons.live_tv,
       Icons.movie_outlined,
+      Icons.video_library_outlined,
       Icons.star_border,
       Icons.search,
       Icons.settings_outlined,

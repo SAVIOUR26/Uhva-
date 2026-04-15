@@ -159,6 +159,81 @@ class VodStream {
       '$serverUrl/movie/$username/$password/$streamId.$containerExtension';
 }
 
+// ─── Series Stream ─────────────────────────────────────────────────────────
+class SeriesStream {
+  final int seriesId;
+  final String name;
+  final String cover;
+  final String categoryId;
+  final String plot;
+  final String cast;
+  final String director;
+  final String genre;
+  final String releaseDate;
+  final String rating;
+  final double rating5based;
+
+  const SeriesStream({
+    required this.seriesId,
+    required this.name,
+    required this.cover,
+    required this.categoryId,
+    this.plot = '',
+    this.cast = '',
+    this.director = '',
+    this.genre = '',
+    this.releaseDate = '',
+    this.rating = '',
+    this.rating5based = 0.0,
+  });
+
+  factory SeriesStream.fromJson(Map<String, dynamic> json) => SeriesStream(
+        seriesId: int.tryParse(json['series_id']?.toString() ?? '0') ?? 0,
+        name: json['name'] ?? '',
+        cover: json['cover'] ?? '',
+        categoryId: json['category_id']?.toString() ?? '',
+        plot: json['plot'] ?? '',
+        cast: json['cast'] ?? '',
+        director: json['director'] ?? '',
+        genre: json['genre'] ?? '',
+        releaseDate: json['releaseDate'] ?? json['release_date'] ?? '',
+        rating: json['rating']?.toString() ?? '',
+        rating5based:
+            double.tryParse(json['rating_5based']?.toString() ?? '0') ?? 0.0,
+      );
+}
+
+// ─── Series Episode ─────────────────────────────────────────────────────────
+class SeriesEpisode {
+  final String id;
+  final int episodeNum;
+  final String title;
+  final String containerExtension;
+  final int season;
+  final String duration;
+
+  const SeriesEpisode({
+    required this.id,
+    required this.episodeNum,
+    required this.title,
+    required this.containerExtension,
+    required this.season,
+    this.duration = '',
+  });
+
+  factory SeriesEpisode.fromJson(Map<String, dynamic> json, int season) {
+    final info = json['info'] as Map<String, dynamic>? ?? {};
+    return SeriesEpisode(
+      id: json['id']?.toString() ?? '',
+      episodeNum: int.tryParse(json['episode_num']?.toString() ?? '0') ?? 0,
+      title: json['title'] ?? '',
+      containerExtension: json['container_extension'] ?? 'mkv',
+      season: season,
+      duration: info['duration']?.toString() ?? '',
+    );
+  }
+}
+
 // ─── EPG Entry ─────────────────────────────────────────────────────────────
 class EpgEntry {
   final String title;

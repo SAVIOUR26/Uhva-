@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:better_player/better_player.dart';
-import 'package:provider/provider.dart';
+import 'package:media_kit/media_kit.dart';
+import 'package:media_kit_video/media_kit_video.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:provider/provider.dart';
+
 import '../../models/models.dart';
 import '../../providers/app_provider.dart';
 import '../../theme/app_theme.dart';
@@ -17,11 +20,12 @@ class PlayerScreen extends StatefulWidget {
 }
 
 class _PlayerScreenState extends State<PlayerScreen> {
-  BetterPlayerController? _controller;
+  late final Player _player;
+  late final VideoController _videoController;
+
   bool _showOsd = true;
-  bool _isLoading = true;
+  bool _isBuffering = false;
   bool _hasError = false;
-  String _errorMsg = '';
 
   late LiveChannel _channel;
   List<EpgEntry> _epg = [];
@@ -35,80 +39,41 @@ class _PlayerScreenState extends State<PlayerScreen> {
       DeviceOrientation.landscapeLeft,
       DeviceOrientation.landscapeRight,
     ]);
-    _initPlayer();
+    WakelockPlus.enable();
+    _player = Player();
+    _videoController = VideoController(_player);
+    _player.stream.buffering.listen((buffering) {
+      if (mounted) setState(() => _isBuffering = buffering);
+    });
+    _player.stream.error.listen((error) {
+      if (mounted && error.isNotEmpty) setState(() => _hasError = true);
+    });
+    _initStream();
     _loadEpg();
+    _autoHideOsd();
   }
 
-  @override
-  void dispose() {
-    _controller?.dispose();
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
-    super.dispose();
-  }
-
-  void _initPlayer() {
-    final provider = context.read<AppProvider>();
-    final url = provider.streamUrl(_channel.streamId);
-
-    final dataSource = BetterPlayerDataSource(
-      BetterPlayerDataSourceType.network,
-      url,
-      liveStream: true,
-      bufferingConfiguration: const BetterPlayerBufferingConfiguration(
-        minBufferMs: 2000,
-        maxBufferMs: 10000,
-        bufferForPlaybackMs: 1500,
-        bufferForPlaybackAfterRebufferMs: 3000,
-      ),
-    );
-
-    _controller = BetterPlayerController(
-      BetterPlayerConfiguration(
-        autoPlay: true,
-        looping: false,
-        fullScreenByDefault: false,
-        allowedScreenSleep: false,
-        autoDetectFullscreenAspectRatio: true,
-        controlsConfiguration: const BetterPlayerControlsConfiguration(
-          showControls: false,
-        ),
-        eventListener: (event) {
-          if (!mounted) return;
-          if (event.betterPlayerEventType == BetterPlayerEventType.initialized) {
-            setState(() => _isLoading = false);
-          } else if (event.betterPlayerEventType == BetterPlayerEventType.exception) {
-            setState(() {
-              _isLoading = false;
-              _hasError = true;
-              _errorMsg = 'Stream unavailable. Try again.';
-            });
-          } else if (event.betterPlayerEventType == BetterPlayerEventType.bufferingStart) {
-            setState(() => _isLoading = true);
-          } else if (event.betterPlayerEventType == BetterPlayerEventType.bufferingEnd) {
-            setState(() => _isLoading = false);
-          }
-        },
-      ),
-      betterPlayerDataSource: dataSource,
-    );
-    setState(() {});
+  void _initStream() {
+    final url = context.read<AppProvider>().streamUrl(_channel.streamId);
+    _player.open(Media(url));
+    setState(() => _hasError = false);
   }
 
   Future<void> _loadEpg() async {
     if (_channel.epgChannelId.isEmpty) return;
-    final provider = context.read<AppProvider>();
-    final entries = await provider.getEpg(_channel.epgChannelId);
+    final entries = await context.read<AppProvider>().getEpg(_channel.epgChannelId);
     if (mounted) setState(() => _epg = entries);
   }
 
   void _toggleOsd() {
     setState(() => _showOsd = !_showOsd);
-    if (_showOsd) {
-      Future.delayed(const Duration(seconds: 5), () {
-        if (mounted) setState(() => _showOsd = false);
-      });
-    }
+    if (_showOsd) _autoHideOsd();
+  }
+
+  void _autoHideOsd() {
+    Future.delayed(const Duration(seconds: 5), () {
+      if (mounted) setState(() => _showOsd = false);
+    });
   }
 
   EpgEntry? get _currentEpg {
@@ -127,6 +92,15 @@ class _PlayerScreenState extends State<PlayerScreen> {
   }
 
   @override
+  void dispose() {
+    WakelockPlus.disable();
+    _player.dispose();
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
@@ -135,13 +109,15 @@ class _PlayerScreenState extends State<PlayerScreen> {
         child: Stack(
           children: [
             // ── Video ────────────────────────────────────────────────────
-            if (_controller != null)
-              SizedBox.expand(
-                child: BetterPlayer(controller: _controller!),
+            SizedBox.expand(
+              child: Video(
+                controller: _videoController,
+                controls: NoVideoControls,
               ),
+            ),
 
             // ── Buffering spinner ─────────────────────────────────────────
-            if (_isLoading)
+            if (_isBuffering && !_hasError)
               const Center(
                 child: CircularProgressIndicator(
                   color: UhvaColors.primary,
@@ -155,18 +131,18 @@ class _PlayerScreenState extends State<PlayerScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.signal_wifi_off, color: Colors.white54, size: 48),
+                    const Icon(Icons.signal_wifi_off,
+                        color: Colors.white54, size: 48),
                     const SizedBox(height: 12),
-                    Text(_errorMsg,
-                        style: const TextStyle(color: Colors.white70, fontSize: 14)),
+                    const Text(
+                      'Stream unavailable. Try again.',
+                      style: TextStyle(color: Colors.white70, fontSize: 14),
+                    ),
                     const SizedBox(height: 16),
                     TextButton(
                       onPressed: () {
-                        setState(() {
-                          _hasError = false;
-                          _isLoading = true;
-                        });
-                        _initPlayer();
+                        setState(() => _hasError = false);
+                        _initStream();
                       },
                       child: const Text('Retry',
                           style: TextStyle(color: UhvaColors.primaryLight)),
@@ -219,7 +195,7 @@ class _OsdOverlay extends StatelessWidget {
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        // Top bar
+        // Top gradient bar
         Positioned(
           top: 0,
           left: 0,

@@ -54,7 +54,7 @@ class SettingsScreen extends StatelessWidget {
                 color: UhvaColors.onSurfaceHint),
           ),
           ListTile(
-            leading: const Icon(Icons.buffer),
+            leading: const Icon(Icons.tune_outlined),
             title: const Text('Buffer size'),
             subtitle: const Text('Medium (10s)'),
             trailing: const Icon(Icons.chevron_right,

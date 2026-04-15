@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+
 import '../models/models.dart';
 import '../services/xtream_service.dart';
 import '../services/storage_service.dart';
@@ -20,7 +21,7 @@ class AppProvider extends ChangeNotifier {
 
   bool get isAuthenticated => _user != null;
 
-  // Channels
+  // ─── Live channels ────────────────────────────────────────────────────────
   List<LiveChannel> _allChannels = [];
   List<LiveChannel> get allChannels => _allChannels;
 
@@ -56,12 +57,19 @@ class AppProvider extends ChangeNotifier {
     return ids.map((id) => map[id]).whereType<LiveChannel>().toList();
   }
 
-  // VOD
+  // ─── VOD ─────────────────────────────────────────────────────────────────
   List<VodStream> _vodStreams = [];
   List<VodStream> get vodStreams => _vodStreams;
 
   List<StreamCategory> _vodCategories = [];
   List<StreamCategory> get vodCategories => _vodCategories;
+
+  // ─── Series ───────────────────────────────────────────────────────────────
+  List<SeriesStream> _series = [];
+  List<SeriesStream> get series => _series;
+
+  List<StreamCategory> _seriesCategories = [];
+  List<StreamCategory> get seriesCategories => _seriesCategories;
 
   // ─── Init ─────────────────────────────────────────────────────────────────
   Future<void> init() async {
@@ -97,6 +105,8 @@ class AppProvider extends ChangeNotifier {
     _liveCategories = [];
     _vodStreams = [];
     _vodCategories = [];
+    _series = [];
+    _seriesCategories = [];
     _setState(AppState.idle);
   }
 
@@ -123,6 +133,21 @@ class AppProvider extends ChangeNotifier {
     } catch (_) {}
   }
 
+  Future<void> loadSeries() async {
+    if (_series.isNotEmpty) return;
+    try {
+      final cats = await _xtream.getSeriesCategories();
+      final list = await _xtream.getSeries();
+      _seriesCategories = cats;
+      _series = list;
+      notifyListeners();
+    } catch (_) {}
+  }
+
+  // ─── Series info ──────────────────────────────────────────────────────────
+  Future<Map<String, dynamic>> getSeriesInfo(String seriesId) =>
+      _xtream.getSeriesInfo(seriesId);
+
   // ─── Category filter ──────────────────────────────────────────────────────
   void selectCategory(String categoryId) {
     _selectedCategoryId = _selectedCategoryId == categoryId ? '' : categoryId;
@@ -147,9 +172,11 @@ class AppProvider extends ChangeNotifier {
     await _storage.addToHistory(channel);
   }
 
-  // ─── Helpers ─────────────────────────────────────────────────────────────
+  // ─── URL helpers ─────────────────────────────────────────────────────────
   String streamUrl(int streamId) => _xtream.streamUrl(streamId);
   String vodUrl(int streamId, String ext) => _xtream.vodUrl(streamId, ext);
+  String seriesEpisodeUrl(String episodeId, String ext) =>
+      _xtream.seriesEpisodeUrl(episodeId, ext);
 
   Future<List<EpgEntry>> getEpg(String epgChannelId) =>
       _xtream.getEpg(epgChannelId);

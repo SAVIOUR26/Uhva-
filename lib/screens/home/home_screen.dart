@@ -8,6 +8,7 @@ import '../../widgets/channel/channel_tile.dart';
 import '../../widgets/channel/category_bar.dart';
 import '../player/player_screen.dart';
 import '../vod/vod_screen.dart';
+import '../series/series_screen.dart';
 import '../settings/settings_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -23,7 +24,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final _searchCtrl = TextEditingController();
   bool _searching = false;
 
-  final _tabs = ['Live TV', 'Movies', 'Favourites'];
+  final _tabs = ['Live TV', 'Movies', 'Series', 'Favourites'];
 
   void _openChannel(LiveChannel channel) async {
     final provider = context.read<AppProvider>();
@@ -111,6 +112,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 onSelect: (i) {
                   setState(() => _navIndex = i);
                   if (i == 1) provider.loadVod();
+                  if (i == 2) provider.loadSeries();
                 },
               ),
             ],
@@ -147,6 +149,8 @@ class _HomeScreenState extends State<HomeScreen> {
       case 1:
         return const VodScreen();
       case 2:
+        return const SeriesScreen();
+      case 3:
         return _ChannelList(
           channels: provider.favouriteChannels,
           selectedChannel: _nowPlaying,

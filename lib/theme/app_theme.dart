@@ -31,11 +31,9 @@ class AppTheme {
           primary: UhvaColors.primary,
           secondary: UhvaColors.primaryLight,
           surface: UhvaColors.surface,
-          background: UhvaColors.background,
           onPrimary: Colors.white,
           onSecondary: Colors.white,
           onSurface: UhvaColors.onSurface,
-          onBackground: UhvaColors.onBackground,
         ),
         appBarTheme: const AppBarTheme(
           backgroundColor: UhvaColors.surface,

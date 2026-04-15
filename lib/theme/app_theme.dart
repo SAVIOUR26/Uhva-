@@ -47,7 +47,7 @@ class AppTheme {
             letterSpacing: 0.3,
           ),
         ),
-        cardTheme: CardTheme(
+        cardTheme: CardThemeData(
           color: UhvaColors.card,
           elevation: 0,
           shape: RoundedRectangleBorder(

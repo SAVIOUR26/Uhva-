@@ -7,7 +7,6 @@ import 'package:provider/provider.dart';
 
 import '../../models/models.dart';
 import '../../providers/app_provider.dart';
-import '../../theme/app_theme.dart';
 
 class VodPlayerScreen extends StatefulWidget {
   /// Pass [vod] for movie playback or [directUrl] + [displayTitle] for

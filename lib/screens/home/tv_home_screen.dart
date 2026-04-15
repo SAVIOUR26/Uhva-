@@ -141,7 +141,7 @@ class _TvSideNav extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   decoration: BoxDecoration(
                     color: sel
-                        ? UhvaColors.primary.withOpacity(0.2)
+                        ? UhvaColors.primary.withValues(alpha: 0.2)
                         : Colors.transparent,
                     borderRadius: BorderRadius.circular(10),
                     border: Border(
@@ -393,7 +393,7 @@ class _TvChannelCardState extends State<_TvChannelCard> {
           duration: const Duration(milliseconds: 150),
           decoration: BoxDecoration(
             color: _focused
-                ? UhvaColors.primary.withOpacity(0.2)
+                ? UhvaColors.primary.withValues(alpha: 0.2)
                 : UhvaColors.card,
             borderRadius: BorderRadius.circular(10),
             border: Border.all(

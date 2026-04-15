@@ -24,7 +24,7 @@ class ChannelTile extends StatelessWidget {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
         color: isSelected
-            ? UhvaColors.primary.withOpacity(0.18)
+            ? UhvaColors.primary.withValues(alpha: 0.18)
             : Colors.transparent,
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         child: Row(

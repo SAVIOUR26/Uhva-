@@ -96,6 +96,43 @@ class XtreamService {
     return (res.data as Map<String, dynamic>? ) ?? {};
   }
 
+  // ─── Radio categories ────────────────────────────────────────────────────
+  Future<List<StreamCategory>> getRadioCategories() async {
+    try {
+      final res = await _dio.get('$_apiBase&action=get_radio_categories');
+      final List list = res.data ?? [];
+      return list.map((e) => StreamCategory.fromJson(e)).toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  // ─── Radio streams ───────────────────────────────────────────────────────
+  Future<List<LiveChannel>> getRadioStreams({String? categoryId}) async {
+    try {
+      String url = '$_apiBase&action=get_radio_streams';
+      if (categoryId != null && categoryId.isNotEmpty) {
+        url += '&category_id=$categoryId';
+      }
+      final res = await _dio.get(url);
+      final List list = res.data ?? [];
+      return list.map((e) => LiveChannel.fromJson(e)).toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  // ─── Catch-up / Timeshift URL ─────────────────────────────────────────────
+  String catchupUrl(int streamId, DateTime start, int durationMinutes) {
+    final y = start.year.toString().padLeft(4, '0');
+    final mo = start.month.toString().padLeft(2, '0');
+    final d = start.day.toString().padLeft(2, '0');
+    final h = start.hour.toString().padLeft(2, '0');
+    final mi = start.minute.toString().padLeft(2, '0');
+    final startStr = '$y-$mo-$d:$h-$mi';
+    return '$_serverUrl/timeshift/$_username/$_password/$durationMinutes/$startStr/$streamId.m3u8';
+  }
+
   // ─── EPG for a channel ───────────────────────────────────────────────────
   Future<List<EpgEntry>> getEpg(String epgChannelId, {int limit = 10}) async {
     try {

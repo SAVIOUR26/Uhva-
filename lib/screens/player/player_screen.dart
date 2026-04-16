@@ -84,6 +84,29 @@ class _PlayerScreenState extends State<PlayerScreen> {
     return null;
   }
 
+  void _showCatchupSheet() {
+    if (_epg.isEmpty) return;
+    final provider = context.read<AppProvider>();
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: UhvaColors.card,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (_) => _CatchupSheet(
+        epgEntries: _epg,
+        channel: _channel,
+        onSelect: (entry) {
+          final durationMin =
+              entry.end.difference(entry.start).inMinutes.clamp(1, 480);
+          final url = provider.catchupUrl(
+              _channel.streamId, entry.start, durationMin);
+          _player.open(Media(url));
+          setState(() => _hasError = false);
+        },
+      ),
+    );
+  }
+
   EpgEntry? get _nextEpg {
     final curr = _currentEpg;
     if (curr == null) return null;
@@ -166,6 +189,9 @@ class _PlayerScreenState extends State<PlayerScreen> {
                     context.read<AppProvider>().toggleFavourite(_channel);
                     setState(() {});
                   },
+                  onCatchup: _channel.tvArchive
+                      ? () => _showCatchupSheet()
+                      : null,
                 ),
               ),
             ),
@@ -182,6 +208,7 @@ class _OsdOverlay extends StatelessWidget {
   final EpgEntry? nextEpg;
   final VoidCallback onBack;
   final VoidCallback onFavourite;
+  final VoidCallback? onCatchup;
 
   const _OsdOverlay({
     required this.channel,
@@ -189,6 +216,7 @@ class _OsdOverlay extends StatelessWidget {
     required this.nextEpg,
     required this.onBack,
     required this.onFavourite,
+    this.onCatchup,
   });
 
   @override
@@ -259,6 +287,12 @@ class _OsdOverlay extends StatelessWidget {
                   ),
                   onPressed: onFavourite,
                 ),
+                if (channel.tvArchive && onCatchup != null)
+                  IconButton(
+                    icon: const Icon(Icons.history, color: Colors.white70),
+                    tooltip: 'Catch-up',
+                    onPressed: onCatchup,
+                  ),
               ],
             ),
           ),
@@ -341,6 +375,90 @@ class _OsdOverlay extends StatelessWidget {
             ),
           ),
         ),
+      ],
+    );
+  }
+}
+
+// ── Catch-up Sheet ─────────────────────────────────────────────────────────
+
+class _CatchupSheet extends StatelessWidget {
+  final List<EpgEntry> epgEntries;
+  final LiveChannel channel;
+  final void Function(EpgEntry) onSelect;
+
+  const _CatchupSheet({
+    required this.epgEntries,
+    required this.channel,
+    required this.onSelect,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final past = epgEntries.where((e) => e.end.isBefore(DateTime.now())).toList();
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const SizedBox(height: 12),
+        Center(
+          child: Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: UhvaColors.divider,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+        ),
+        const SizedBox(height: 14),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 20),
+          child: Row(
+            children: [
+              Icon(Icons.history, color: UhvaColors.primary, size: 20),
+              SizedBox(width: 8),
+              Text('Catch-up',
+                  style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: UhvaColors.onBackground)),
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
+        if (past.isEmpty)
+          const Padding(
+            padding: EdgeInsets.all(24),
+            child: Text('No past programmes available',
+                style: TextStyle(color: UhvaColors.onSurfaceMuted)),
+          )
+        else
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxHeight: 320),
+            child: ListView.separated(
+              shrinkWrap: true,
+              itemCount: past.length,
+              separatorBuilder: (_, __) => const Divider(height: 0, indent: 16),
+              itemBuilder: (_, i) {
+                final entry = past[i];
+                return ListTile(
+                  leading: const Icon(Icons.play_circle_outline,
+                      color: UhvaColors.primary),
+                  title: Text(entry.title,
+                      style: const TextStyle(
+                          fontSize: 13, color: UhvaColors.onBackground)),
+                  subtitle: Text(entry.timeRange,
+                      style: const TextStyle(
+                          fontSize: 11, color: UhvaColors.onSurfaceMuted)),
+                  onTap: () {
+                    Navigator.pop(context);
+                    onSelect(entry);
+                  },
+                );
+              },
+            ),
+          ),
+        const SizedBox(height: 16),
       ],
     );
   }

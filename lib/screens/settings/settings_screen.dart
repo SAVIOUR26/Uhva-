@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../providers/app_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/common/uhva_logo.dart';
+import 'parental_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -59,6 +60,22 @@ class SettingsScreen extends StatelessWidget {
             subtitle: const Text('Medium (10s)'),
             trailing: const Icon(Icons.chevron_right,
                 color: UhvaColors.onSurfaceHint),
+          ),
+
+          const Divider(),
+          _Section(title: 'Security'),
+          ListTile(
+            leading: const Icon(Icons.family_restroom_outlined),
+            title: const Text('Parental Controls'),
+            subtitle: Text(provider.hasPin
+                ? 'PIN enabled — ${provider.lockedCategories.length} locked categories'
+                : 'Not configured'),
+            trailing: const Icon(Icons.chevron_right,
+                color: UhvaColors.onSurfaceHint),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const ParentalScreen()),
+            ),
           ),
 
           const Divider(),

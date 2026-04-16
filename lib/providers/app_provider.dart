@@ -3,12 +3,14 @@ import 'package:flutter/foundation.dart';
 import '../models/models.dart';
 import '../services/xtream_service.dart';
 import '../services/storage_service.dart';
+import '../services/radio_player_service.dart';
 
 enum AppState { idle, loading, loaded, error }
 
 class AppProvider extends ChangeNotifier {
   final _xtream = XtreamService();
   final _storage = StorageService();
+  final _radioCtrl = RadioPlayerService();
 
   AppState _state = AppState.idle;
   AppState get state => _state;
@@ -41,7 +43,8 @@ class AppProvider extends ChangeNotifier {
     }
     if (_searchQuery.isNotEmpty) {
       list = list
-          .where((c) => c.name.toLowerCase().contains(_searchQuery.toLowerCase()))
+          .where((c) =>
+              c.name.toLowerCase().contains(_searchQuery.toLowerCase()))
           .toList();
     }
     return list;
@@ -71,6 +74,58 @@ class AppProvider extends ChangeNotifier {
   List<StreamCategory> _seriesCategories = [];
   List<StreamCategory> get seriesCategories => _seriesCategories;
 
+  // ─── Radio ────────────────────────────────────────────────────────────────
+  List<LiveChannel> _radioStreams = [];
+  List<LiveChannel> get radioStreams => _radioStreams;
+
+  List<StreamCategory> _radioCategories = [];
+  List<StreamCategory> get radioCategories => _radioCategories;
+
+  String _selectedRadioCategoryId = '';
+  String get selectedRadioCategoryId => _selectedRadioCategoryId;
+
+  bool _radioLoading = false;
+  bool get radioLoading => _radioLoading;
+
+  LiveChannel? _nowPlayingRadio;
+  LiveChannel? get nowPlayingRadio => _nowPlayingRadio;
+
+  bool _radioIsPlaying = false;
+  bool get radioIsPlaying => _radioIsPlaying;
+
+  List<LiveChannel> get filteredRadioStreams {
+    if (_selectedRadioCategoryId.isEmpty) return _radioStreams;
+    return _radioStreams
+        .where((r) => r.categoryId == _selectedRadioCategoryId)
+        .toList();
+  }
+
+  // ─── Parental lock ────────────────────────────────────────────────────────
+  bool get hasPin => _storage.getPin() != null;
+  String? get pin => _storage.getPin();
+  Set<String> get lockedCategories => _storage.getLockedCategories();
+
+  Future<void> setPin(String pin) async {
+    await _storage.setPin(pin);
+    notifyListeners();
+  }
+
+  Future<void> clearPin() async {
+    await _storage.clearPin();
+    await _storage.setLockedCategories({});
+    notifyListeners();
+  }
+
+  Future<void> setLockedCategories(Set<String> ids) async {
+    await _storage.setLockedCategories(ids);
+    notifyListeners();
+  }
+
+  bool isCategoryLocked(String categoryId) {
+    if (!hasPin) return false;
+    return lockedCategories.contains(categoryId);
+  }
+
   // ─── Init ─────────────────────────────────────────────────────────────────
   Future<void> init() async {
     await _storage.init();
@@ -99,6 +154,7 @@ class AppProvider extends ChangeNotifier {
   }
 
   Future<void> logout() async {
+    _radioCtrl.stop();
     await _storage.clearCredentials();
     _user = null;
     _allChannels = [];
@@ -107,6 +163,10 @@ class AppProvider extends ChangeNotifier {
     _vodCategories = [];
     _series = [];
     _seriesCategories = [];
+    _radioStreams = [];
+    _radioCategories = [];
+    _nowPlayingRadio = null;
+    _radioIsPlaying = false;
     _setState(AppState.idle);
   }
 
@@ -144,6 +204,49 @@ class AppProvider extends ChangeNotifier {
     } catch (_) {}
   }
 
+  Future<void> loadRadio() async {
+    if (_radioStreams.isNotEmpty || _radioLoading) return;
+    _radioLoading = true;
+    notifyListeners();
+    try {
+      final cats = await _xtream.getRadioCategories();
+      final streams = await _xtream.getRadioStreams();
+      _radioCategories = cats;
+      _radioStreams = streams;
+    } catch (_) {
+      _radioStreams = [];
+    } finally {
+      _radioLoading = false;
+      notifyListeners();
+    }
+  }
+
+  // ─── Radio playback ───────────────────────────────────────────────────────
+  Future<void> playRadio(LiveChannel station) async {
+    if (_nowPlayingRadio?.streamId == station.streamId) {
+      await _radioCtrl.togglePlayPause();
+    } else {
+      final url = _xtream.streamUrl(station.streamId);
+      await _radioCtrl.play(url);
+      _nowPlayingRadio = station;
+    }
+    _radioIsPlaying = _radioCtrl.isPlaying;
+    notifyListeners();
+  }
+
+  Future<void> toggleRadioPlayPause() async {
+    await _radioCtrl.togglePlayPause();
+    _radioIsPlaying = _radioCtrl.isPlaying;
+    notifyListeners();
+  }
+
+  Future<void> stopRadio() async {
+    await _radioCtrl.stop();
+    _nowPlayingRadio = null;
+    _radioIsPlaying = false;
+    notifyListeners();
+  }
+
   // ─── Series info ──────────────────────────────────────────────────────────
   Future<Map<String, dynamic>> getSeriesInfo(String seriesId) =>
       _xtream.getSeriesInfo(seriesId);
@@ -151,6 +254,12 @@ class AppProvider extends ChangeNotifier {
   // ─── Category filter ──────────────────────────────────────────────────────
   void selectCategory(String categoryId) {
     _selectedCategoryId = _selectedCategoryId == categoryId ? '' : categoryId;
+    notifyListeners();
+  }
+
+  void selectRadioCategory(String categoryId) {
+    _selectedRadioCategoryId =
+        _selectedRadioCategoryId == categoryId ? '' : categoryId;
     notifyListeners();
   }
 
@@ -177,9 +286,17 @@ class AppProvider extends ChangeNotifier {
   String vodUrl(int streamId, String ext) => _xtream.vodUrl(streamId, ext);
   String seriesEpisodeUrl(String episodeId, String ext) =>
       _xtream.seriesEpisodeUrl(episodeId, ext);
+  String catchupUrl(int streamId, DateTime start, int durationMinutes) =>
+      _xtream.catchupUrl(streamId, start, durationMinutes);
 
-  Future<List<EpgEntry>> getEpg(String epgChannelId) =>
-      _xtream.getEpg(epgChannelId);
+  Future<List<EpgEntry>> getEpg(String epgChannelId, {int limit = 10}) =>
+      _xtream.getEpg(epgChannelId, limit: limit);
+
+  @override
+  void dispose() {
+    _radioCtrl.dispose();
+    super.dispose();
+  }
 
   void _setState(AppState s) {
     _state = s;

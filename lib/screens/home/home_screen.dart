@@ -9,6 +9,9 @@ import '../../widgets/channel/category_bar.dart';
 import '../player/player_screen.dart';
 import '../vod/vod_screen.dart';
 import '../series/series_screen.dart';
+import '../radio/radio_screen.dart';
+import '../epg/epg_screen.dart';
+import '../search/search_screen.dart';
 import '../settings/settings_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -21,10 +24,8 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _navIndex = 0;
   LiveChannel? _nowPlaying;
-  final _searchCtrl = TextEditingController();
-  bool _searching = false;
 
-  final _tabs = ['Live TV', 'Movies', 'Series', 'Favourites'];
+  static const _tabs = ['Live TV', 'Movies', 'Series', 'Radio', 'Favourites'];
 
   void _openChannel(LiveChannel channel) async {
     final provider = context.read<AppProvider>();
@@ -33,16 +34,8 @@ class _HomeScreenState extends State<HomeScreen> {
     if (!mounted) return;
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (_) => PlayerScreen(channel: channel),
-      ),
+      MaterialPageRoute(builder: (_) => PlayerScreen(channel: channel)),
     ).then((_) => setState(() => _nowPlaying = channel));
-  }
-
-  @override
-  void dispose() {
-    _searchCtrl.dispose();
-    super.dispose();
   }
 
   @override
@@ -51,32 +44,26 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: _searching
-            ? TextField(
-                controller: _searchCtrl,
-                autofocus: true,
-                style: const TextStyle(color: UhvaColors.onBackground),
-                decoration: const InputDecoration(
-                  hintText: 'Search channels...',
-                  border: InputBorder.none,
-                  hintStyle: TextStyle(color: UhvaColors.onSurfaceMuted),
-                ),
-                onChanged: provider.search,
-              )
-            : const UhvaLogo(size: 28, horizontal: true),
+        title: const UhvaLogo(size: 28, horizontal: true),
         actions: [
+          // EPG guide button
           IconButton(
-            icon: Icon(_searching ? Icons.close : Icons.search,
+            icon: const Icon(Icons.grid_view_rounded,
                 color: UhvaColors.onSurface),
-            onPressed: () {
-              setState(() {
-                _searching = !_searching;
-                if (!_searching) {
-                  _searchCtrl.clear();
-                  provider.search('');
-                }
-              });
-            },
+            tooltip: 'TV Guide',
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const EpgScreen()),
+            ),
+          ),
+          // Search button
+          IconButton(
+            icon: const Icon(Icons.search, color: UhvaColors.onSurface),
+            tooltip: 'Search',
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const SearchScreen()),
+            ),
           ),
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert, color: UhvaColors.onSurface),
@@ -92,11 +79,13 @@ class _HomeScreenState extends State<HomeScreen> {
             itemBuilder: (_) => [
               const PopupMenuItem(
                 value: 'settings',
-                child: Text('Settings', style: TextStyle(color: UhvaColors.onBackground)),
+                child: Text('Settings',
+                    style: TextStyle(color: UhvaColors.onBackground)),
               ),
               const PopupMenuItem(
                 value: 'logout',
-                child: Text('Sign out', style: TextStyle(color: UhvaColors.onBackground)),
+                child: Text('Sign out',
+                    style: TextStyle(color: UhvaColors.onBackground)),
               ),
             ],
           ),
@@ -113,6 +102,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   setState(() => _navIndex = i);
                   if (i == 1) provider.loadVod();
                   if (i == 2) provider.loadSeries();
+                  if (i == 3) provider.loadRadio();
                 },
               ),
             ],
@@ -131,7 +121,11 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 6),
           ],
           Expanded(child: _buildBody(provider)),
-          if (_nowPlaying != null) _MiniPlayer(channel: _nowPlaying!, onTap: () => _openChannel(_nowPlaying!)),
+          if (_nowPlaying != null && _navIndex != 3)
+            _MiniPlayer(
+              channel: _nowPlaying!,
+              onTap: () => _openChannel(_nowPlaying!),
+            ),
         ],
       ),
     );
@@ -151,6 +145,8 @@ class _HomeScreenState extends State<HomeScreen> {
       case 2:
         return const SeriesScreen();
       case 3:
+        return const RadioScreen();
+      case 4:
         return _ChannelList(
           channels: provider.favouriteChannels,
           selectedChannel: _nowPlaying,
@@ -164,24 +160,31 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
+// ── Tab Bar ────────────────────────────────────────────────────────────────
+
 class _TabBar extends StatelessWidget {
   final List<String> tabs;
   final int selectedIndex;
   final ValueChanged<int> onSelect;
 
-  const _TabBar({required this.tabs, required this.selectedIndex, required this.onSelect});
+  const _TabBar(
+      {required this.tabs,
+      required this.selectedIndex,
+      required this.onSelect});
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: List.generate(tabs.length, (i) {
-        final sel = i == selectedIndex;
-        return Expanded(
-          child: GestureDetector(
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: List.generate(tabs.length, (i) {
+          final sel = i == selectedIndex;
+          return GestureDetector(
             onTap: () => onSelect(i),
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 150),
               height: 44,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
               decoration: BoxDecoration(
                 border: Border(
                   bottom: BorderSide(
@@ -195,18 +198,23 @@ class _TabBar extends StatelessWidget {
                   tabs[i],
                   style: TextStyle(
                     fontSize: 13,
-                    fontWeight: sel ? FontWeight.w600 : FontWeight.w400,
-                    color: sel ? UhvaColors.primaryLight : UhvaColors.onSurfaceMuted,
+                    fontWeight:
+                        sel ? FontWeight.w600 : FontWeight.w400,
+                    color: sel
+                        ? UhvaColors.primaryLight
+                        : UhvaColors.onSurfaceMuted,
                   ),
                 ),
               ),
             ),
-          ),
-        );
-      }),
+          );
+        }),
+      ),
     );
   }
 }
+
+// ── Channel List ───────────────────────────────────────────────────────────
 
 class _ChannelList extends StatelessWidget {
   final List<LiveChannel> channels;
@@ -236,16 +244,20 @@ class _ChannelList extends StatelessWidget {
     }
     return ListView.separated(
       itemCount: channels.length,
-      separatorBuilder: (_, __) => const Divider(height: 0, indent: 68),
+      separatorBuilder: (_, __) =>
+          const Divider(height: 0, indent: 68),
       itemBuilder: (_, i) => ChannelTile(
         channel: channels[i],
-        isSelected: selectedChannel?.streamId == channels[i].streamId,
+        isSelected:
+            selectedChannel?.streamId == channels[i].streamId,
         onTap: () => onTap(channels[i]),
         onFavouriteTap: () => onFavTap(channels[i]),
       ),
     );
   }
 }
+
+// ── Mini Player ────────────────────────────────────────────────────────────
 
 class _MiniPlayer extends StatelessWidget {
   final LiveChannel channel;
@@ -291,16 +303,19 @@ class _MiniPlayer extends StatelessWidget {
                     Text(
                       channel.currentProgram!.title,
                       style: const TextStyle(
-                          fontSize: 10, color: UhvaColors.onSurfaceMuted),
+                          fontSize: 10,
+                          color: UhvaColors.onSurfaceMuted),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                 ],
               ),
             ),
-            const Icon(Icons.play_arrow, color: UhvaColors.primary, size: 26),
+            const Icon(Icons.play_arrow,
+                color: UhvaColors.primary, size: 26),
             const SizedBox(width: 4),
-            const Icon(Icons.expand_less, color: UhvaColors.onSurfaceMuted, size: 20),
+            const Icon(Icons.expand_less,
+                color: UhvaColors.onSurfaceMuted, size: 20),
           ],
         ),
       ),

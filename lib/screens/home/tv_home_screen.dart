@@ -9,6 +9,10 @@ import '../../widgets/common/uhva_logo.dart';
 import '../player/player_screen.dart';
 import '../series/series_screen.dart';
 import '../vod/vod_screen.dart';
+import '../radio/radio_screen.dart';
+import '../epg/epg_screen.dart';
+import '../search/search_screen.dart';
+import '../settings/settings_screen.dart';
 
 class TvHomeScreen extends StatefulWidget {
   const TvHomeScreen({super.key});
@@ -20,7 +24,10 @@ class TvHomeScreen extends StatefulWidget {
 class _TvHomeScreenState extends State<TvHomeScreen> {
   int _navIndex = 0;
   LiveChannel? _focusedChannel;
-  final _navItems = ['Live TV', 'Movies', 'Series', 'Favourites', 'Search', 'Settings'];
+  final _navItems = [
+    'Live TV', 'Movies', 'Series', 'Radio', 'Favourites',
+    'Guide', 'Search', 'Settings'
+  ];
 
   Widget _buildContent(AppProvider provider) {
     switch (_navIndex) {
@@ -40,14 +47,14 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
         return const VodScreen();
       case 2:
         return const SeriesScreen();
+      case 3:
+        return const RadioScreen();
+      case 4:
+        return _TvFavourites(provider: provider);
       default:
-        return Center(
-          child: Text(
-            _navItems[_navIndex],
-            style: const TextStyle(
-                color: UhvaColors.onSurfaceMuted, fontSize: 22),
-          ),
-        );
+        return const SizedBox();
+      default:
+        return const SizedBox();
     }
   }
 
@@ -63,9 +70,26 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
             items: _navItems,
             selectedIndex: _navIndex,
             onSelect: (i) {
+              // Guide / Search / Settings are pushed as full routes
+              if (i == 5) {
+                Navigator.push(context,
+                    MaterialPageRoute(builder: (_) => const EpgScreen()));
+                return;
+              }
+              if (i == 6) {
+                Navigator.push(context,
+                    MaterialPageRoute(builder: (_) => const SearchScreen()));
+                return;
+              }
+              if (i == 7) {
+                Navigator.push(context,
+                    MaterialPageRoute(builder: (_) => const SettingsScreen()));
+                return;
+              }
               setState(() => _navIndex = i);
               if (i == 1) provider.loadVod();
               if (i == 2) provider.loadSeries();
+              if (i == 3) provider.loadRadio();
             },
           ),
           const VerticalDivider(width: 0),
@@ -103,11 +127,13 @@ class _TvSideNav extends StatelessWidget {
       Icons.live_tv,
       Icons.movie_outlined,
       Icons.video_library_outlined,
+      Icons.radio,
       Icons.star_border,
+      Icons.grid_view_rounded,
       Icons.search,
       Icons.settings_outlined,
     ];
-    return icons[i];
+    return i < icons.length ? icons[i] : Icons.circle;
   }
 
   @override
@@ -504,6 +530,49 @@ class _TvPill extends StatelessWidget {
             color: selected ? Colors.white : UhvaColors.onSurfaceMuted,
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _TvFavourites extends StatelessWidget {
+  final AppProvider provider;
+  const _TvFavourites({required this.provider});
+
+  @override
+  Widget build(BuildContext context) {
+    final favs = provider.favouriteChannels;
+    if (favs.isEmpty) {
+      return const Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.star_border, size: 56, color: UhvaColors.onSurfaceHint),
+            SizedBox(height: 16),
+            Text('No favourites yet',
+                style:
+                    TextStyle(color: UhvaColors.onSurfaceMuted, fontSize: 16)),
+          ],
+        ),
+      );
+    }
+    return GridView.builder(
+      padding: const EdgeInsets.all(24),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 6,
+        childAspectRatio: 1.4,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
+      ),
+      itemCount: favs.length,
+      itemBuilder: (ctx, i) => _TvChannelCard(
+        channel: favs[i],
+        onFocus: (_) {},
+        onSelect: (ch) {
+          provider.addToHistory(ch);
+          Navigator.push(ctx,
+              MaterialPageRoute(builder: (_) => PlayerScreen(channel: ch)));
+        },
       ),
     );
   }

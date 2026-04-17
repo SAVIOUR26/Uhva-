@@ -53,8 +53,6 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
         return _TvFavourites(provider: provider);
       default:
         return const SizedBox();
-      default:
-        return const SizedBox();
     }
   }
 

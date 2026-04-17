@@ -28,8 +28,6 @@ class _SpeedTestScreenState extends State<SpeedTestScreen>
 
   late AnimationController _needleCtrl;
   late Animation<double> _needleAnim;
-  double _needleTarget = 0;
-
   final _dio = Dio(BaseOptions(
     connectTimeout: const Duration(seconds: 10),
     receiveTimeout: const Duration(seconds: 30),

@@ -32,7 +32,7 @@ class _ParentalScreenState extends State<ParentalScreen> {
                 ? 'PIN is set — tap to change or disable'
                 : 'Set a 4-digit PIN to protect content'),
             value: hasPin,
-            activeColor: UhvaColors.primary,
+            activeThumbColor: UhvaColors.primary,
             onChanged: (v) async {
               if (v) {
                 await _setNewPin(context, provider);
@@ -89,7 +89,7 @@ class _ParentalScreenState extends State<ParentalScreen> {
                       style:
                           const TextStyle(color: UhvaColors.onBackground)),
                   value: locked,
-                  activeColor: UhvaColors.primary,
+                  activeThumbColor: UhvaColors.primary,
                   secondary: Icon(
                     locked ? Icons.lock : Icons.lock_open_outlined,
                     color: locked

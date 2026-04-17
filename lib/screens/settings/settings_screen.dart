@@ -4,6 +4,7 @@ import '../../providers/app_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/common/uhva_logo.dart';
 import 'parental_screen.dart';
+import 'speed_test_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -75,6 +76,20 @@ class SettingsScreen extends StatelessWidget {
             onTap: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const ParentalScreen()),
+            ),
+          ),
+
+          const Divider(),
+          _Section(title: 'Network'),
+          ListTile(
+            leading: const Icon(Icons.speed_outlined),
+            title: const Text('Speed Test'),
+            subtitle: const Text('Measure your download speed'),
+            trailing: const Icon(Icons.chevron_right,
+                color: UhvaColors.onSurfaceHint),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const SpeedTestScreen()),
             ),
           ),
 

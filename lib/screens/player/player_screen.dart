@@ -26,6 +26,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
   bool _showOsd = true;
   bool _isBuffering = false;
   bool _hasError = false;
+  String _errorMessage = '';
 
   late LiveChannel _channel;
   List<EpgEntry> _epg = [];
@@ -46,7 +47,12 @@ class _PlayerScreenState extends State<PlayerScreen> {
       if (mounted) setState(() => _isBuffering = buffering);
     });
     _player.stream.error.listen((error) {
-      if (mounted && error.isNotEmpty) setState(() => _hasError = true);
+      if (mounted && error.isNotEmpty) {
+        setState(() {
+          _hasError = true;
+          _errorMessage = _friendlyError(error);
+        });
+      }
     });
     _initStream();
     _loadEpg();
@@ -56,7 +62,22 @@ class _PlayerScreenState extends State<PlayerScreen> {
   void _initStream() {
     final url = context.read<AppProvider>().streamUrl(_channel.streamId);
     _player.open(Media(url));
-    setState(() => _hasError = false);
+    setState(() { _hasError = false; _errorMessage = ''; });
+  }
+
+  String _friendlyError(String raw) {
+    final r = raw.toLowerCase();
+    if (r.contains('403') || r.contains('forbidden'))
+      return 'Access denied (403) — stream may be geo-restricted. Try a VPN.';
+    if (r.contains('404') || r.contains('not found'))
+      return 'Stream not found (404) — channel may be offline.';
+    if (r.contains('401') || r.contains('unauthorized'))
+      return 'Authentication failed — check your IPTV credentials.';
+    if (r.contains('timeout') || r.contains('timed out'))
+      return 'Connection timed out — check your internet connection.';
+    if (r.contains('connection refused') || r.contains('refused'))
+      return 'Server refused connection — server may be down.';
+    return 'Stream unavailable.';
   }
 
   Future<void> _loadEpg() async {
@@ -157,16 +178,16 @@ class _PlayerScreenState extends State<PlayerScreen> {
                     const Icon(Icons.signal_wifi_off,
                         color: Colors.white54, size: 48),
                     const SizedBox(height: 12),
-                    const Text(
-                      'Stream unavailable. Try again.',
-                      style: TextStyle(color: Colors.white70, fontSize: 14),
+                    Text(
+                      _errorMessage.isEmpty
+                          ? 'Stream unavailable. Try again.'
+                          : _errorMessage,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: Colors.white70, fontSize: 14),
                     ),
                     const SizedBox(height: 16),
                     TextButton(
-                      onPressed: () {
-                        setState(() => _hasError = false);
-                        _initStream();
-                      },
+                      onPressed: _initStream,
                       child: const Text('Retry',
                           style: TextStyle(color: UhvaColors.primaryLight)),
                     ),

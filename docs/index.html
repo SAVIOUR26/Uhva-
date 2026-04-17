@@ -756,12 +756,15 @@
       <div id="download-notice"></div>
 
       <!-- Device tabs -->
-      <div class="device-tabs">
+      <div class="device-tabs" style="max-width:520px;">
         <button class="tab-btn active" onclick="switchTab('mobile', this)">
           📱 Android Phone
         </button>
         <button class="tab-btn" onclick="switchTab('tv', this)">
           📺 Android TV
+        </button>
+        <button class="tab-btn" onclick="switchTab('firestick', this)">
+          🔥 Fire TV Stick
         </button>
       </div>
 
@@ -974,6 +977,207 @@
         </div>
       </div>
 
+      <!-- Fire TV Stick tab -->
+      <div class="tab-panel" id="tab-firestick">
+
+        <!-- Model → APK picker -->
+        <div style="
+          background:rgba(255,153,0,0.07);
+          border:1px solid rgba(255,153,0,0.25);
+          border-radius:14px;
+          padding:18px 22px;
+          margin-bottom:24px;
+          font-size:13px;
+          color:var(--text);
+          line-height:1.7;
+        ">
+          <b style="color:#FFAA33;display:block;margin-bottom:8px;">🔥 Which APK for my Fire TV Stick?</b>
+          <table style="width:100%;border-collapse:collapse;font-size:12px;">
+            <tr style="color:var(--muted);">
+              <th style="text-align:left;padding:4px 8px 4px 0;border-bottom:1px solid var(--border);">Model</th>
+              <th style="text-align:left;padding:4px 8px;border-bottom:1px solid var(--border);">Use this APK</th>
+            </tr>
+            <tr>
+              <td style="padding:6px 8px 6px 0;border-bottom:1px solid rgba(255,255,255,0.05);">Fire TV Stick 4K Max (any gen)</td>
+              <td style="padding:6px 8px;border-bottom:1px solid rgba(255,255,255,0.05);color:#34D399;font-weight:600;">ARM 64-bit</td>
+            </tr>
+            <tr>
+              <td style="padding:6px 8px 6px 0;border-bottom:1px solid rgba(255,255,255,0.05);">Fire TV Stick 4K (1st gen)</td>
+              <td style="padding:6px 8px;border-bottom:1px solid rgba(255,255,255,0.05);color:#34D399;font-weight:600;">ARM 64-bit</td>
+            </tr>
+            <tr>
+              <td style="padding:6px 8px 6px 0;border-bottom:1px solid rgba(255,255,255,0.05);">Fire TV Stick HD (3rd gen)</td>
+              <td style="padding:6px 8px;border-bottom:1px solid rgba(255,255,255,0.05);color:#34D399;font-weight:600;">ARM 64-bit</td>
+            </tr>
+            <tr>
+              <td style="padding:6px 8px 6px 0;border-bottom:1px solid rgba(255,255,255,0.05);">Fire TV Stick (1st / 2nd gen)</td>
+              <td style="padding:6px 8px;border-bottom:1px solid rgba(255,255,255,0.05);color:#A78BFA;font-weight:600;">ARM 32-bit</td>
+            </tr>
+            <tr>
+              <td style="padding:6px 8px 6px 0;">Fire TV Stick Lite</td>
+              <td style="padding:6px 8px;color:#A78BFA;font-weight:600;">ARM 32-bit</td>
+            </tr>
+          </table>
+          <p style="margin-top:10px;color:var(--muted);font-size:11px;">Not sure which model? Use the <b style="color:var(--text);">Universal APK</b> — it works on all of them.</p>
+        </div>
+
+        <div class="download-grid">
+          <!-- ARM64 for Fire TV 4K -->
+          <div class="dl-card featured">
+            <div class="dl-card-header">
+              <div class="dl-icon">🔥</div>
+              <div>
+                <div class="dl-card-title">Fire TV Stick 4K / 4K Max</div>
+                <div class="dl-card-sub">ARM 64-bit — recommended</div>
+              </div>
+            </div>
+            <div class="dl-meta">
+              <span class="chip green">Best for 4K Sticks</span>
+              <span class="chip">arm64-v8a</span>
+            </div>
+            <p style="font-size:13px; color:var(--muted); line-height:1.5;">
+              For Fire TV Stick 4K, 4K Max, and Fire TV Stick HD (3rd gen).
+            </p>
+            <a class="btn-download btn-download-primary" id="dlFireArm64" href="#" download>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <path d="M12 16l-5-5h3V4h4v7h3l-5 5z" fill="white"/>
+                <path d="M5 20h14v-2H5v2z" fill="white"/>
+              </svg>
+              Download for Fire TV 4K
+            </a>
+          </div>
+
+          <!-- ARM32 for older sticks -->
+          <div class="dl-card">
+            <div class="dl-card-header">
+              <div class="dl-icon">📟</div>
+              <div>
+                <div class="dl-card-title">Fire TV Stick Lite / 1st–2nd gen</div>
+                <div class="dl-card-sub">ARM 32-bit</div>
+              </div>
+            </div>
+            <div class="dl-meta">
+              <span class="chip">Older Sticks</span>
+              <span class="chip">armeabi-v7a</span>
+            </div>
+            <p style="font-size:13px; color:var(--muted); line-height:1.5;">
+              For Fire TV Stick Lite and 1st / 2nd generation sticks.
+            </p>
+            <a class="btn-download btn-download-secondary" id="dlFireArm32" href="#" download>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <path d="M12 16l-5-5h3V4h4v7h3l-5 5z" fill="currentColor"/>
+                <path d="M5 20h14v-2H5v2z" fill="currentColor"/>
+              </svg>
+              Download ARM 32-bit
+            </a>
+          </div>
+
+          <!-- Universal fallback -->
+          <div class="dl-card">
+            <div class="dl-card-header">
+              <div class="dl-icon">📦</div>
+              <div>
+                <div class="dl-card-title">Universal APK</div>
+                <div class="dl-card-sub">Works on any Fire TV Stick</div>
+              </div>
+            </div>
+            <div class="dl-meta">
+              <span class="chip">All Models</span>
+              <span class="chip">Larger File</span>
+            </div>
+            <p style="font-size:13px; color:var(--muted); line-height:1.5;">
+              Not sure which model you have? This works on every Fire TV Stick.
+            </p>
+            <a class="btn-download btn-download-secondary" id="dlFireUniversal" href="#" download>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <path d="M12 16l-5-5h3V4h4v7h3l-5 5z" fill="currentColor"/>
+                <path d="M5 20h14v-2H5v2z" fill="currentColor"/>
+              </svg>
+              Download Universal
+            </a>
+          </div>
+
+          <!-- Fire OS install steps -->
+          <div class="dl-card">
+            <div class="dl-card-header">
+              <div class="dl-icon">📋</div>
+              <div>
+                <div class="dl-card-title">Fire OS — Enable Sideloading</div>
+                <div class="dl-card-sub">One-time setup before install</div>
+              </div>
+            </div>
+            <div class="steps-list" style="margin-top:4px;">
+              <div class="step">
+                <div class="step-num">1</div>
+                <div class="step-text">
+                  On your Fire Stick: <b>Settings → My Fire TV → Developer Options</b>
+                </div>
+              </div>
+              <div class="step">
+                <div class="step-num">2</div>
+                <div class="step-text">
+                  Turn on <b>Install Unknown Apps</b> → find <b>Downloader</b> → set to <b>ON</b>
+                </div>
+              </div>
+              <div class="step">
+                <div class="step-num">3</div>
+                <div class="step-text">
+                  Install <b>Downloader by AFTVnews</b> from the Amazon Appstore
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- QR + full install steps -->
+        <div class="install-row" style="margin-top:32px;">
+          <div class="qr-box">
+            <div class="qr-frame">
+              <div id="qrcodefire"></div>
+            </div>
+            <p class="qr-label">Scan to get the download URL on your phone, then copy it to Downloader</p>
+          </div>
+
+          <div>
+            <div class="steps-list">
+              <h3>📥 Install via Downloader on Fire TV Stick</h3>
+              <div class="step">
+                <div class="step-num">1</div>
+                <div class="step-text">
+                  Open <b>Downloader</b> on your Fire Stick and enter this URL:<br/>
+                  <code id="fireUrl"></code>
+                </div>
+              </div>
+              <div class="step">
+                <div class="step-num">2</div>
+                <div class="step-text">
+                  Tap <b>Go</b> — the APK downloads to your stick automatically
+                </div>
+              </div>
+              <div class="step">
+                <div class="step-num">3</div>
+                <div class="step-text">
+                  Tap <b>Install</b> when prompted, then <b>Done</b> (not Open)
+                </div>
+              </div>
+              <div class="step">
+                <div class="step-num">4</div>
+                <div class="step-text">
+                  Go to your <b>Apps</b> row or search for <b>UHVA Player</b> and launch it
+                </div>
+              </div>
+              <div class="step">
+                <div class="step-num">5</div>
+                <div class="step-text">
+                  Enter your IPTV server URL, username and password — done!
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
     </div>
   </section>
 
@@ -994,7 +1198,10 @@
       <span style="background:var(--surface); border:1px solid var(--border); border-radius:100px; padding:8px 18px; font-size:13px; color:var(--text);">📱 Realme / Oppo</span>
       <span style="background:var(--surface); border:1px solid var(--border); border-radius:100px; padding:8px 18px; font-size:13px; color:var(--text);">📺 Nvidia Shield TV</span>
       <span style="background:var(--surface); border:1px solid var(--border); border-radius:100px; padding:8px 18px; font-size:13px; color:var(--text);">📺 Mi Box S</span>
-      <span style="background:var(--surface); border:1px solid var(--border); border-radius:100px; padding:8px 18px; font-size:13px; color:var(--text);">📺 Amazon Fire TV 4K</span>
+      <span style="background:var(--surface); border:1px solid var(--border); border-radius:100px; padding:8px 18px; font-size:13px; color:var(--text);">🔥 Fire TV Stick 4K Max</span>
+      <span style="background:var(--surface); border:1px solid var(--border); border-radius:100px; padding:8px 18px; font-size:13px; color:var(--text);">🔥 Fire TV Stick 4K</span>
+      <span style="background:var(--surface); border:1px solid var(--border); border-radius:100px; padding:8px 18px; font-size:13px; color:var(--text);">🔥 Fire TV Stick HD</span>
+      <span style="background:var(--surface); border:1px solid var(--border); border-radius:100px; padding:8px 18px; font-size:13px; color:var(--text);">🔥 Fire TV Stick Lite</span>
       <span style="background:var(--surface); border:1px solid var(--border); border-radius:100px; padding:8px 18px; font-size:13px; color:var(--text);">📺 Chromecast w/ Google TV</span>
       <span style="background:var(--surface); border:1px solid var(--border); border-radius:100px; padding:8px 18px; font-size:13px; color:var(--text);">📺 Android TV Boxes</span>
     </div>
@@ -1045,20 +1252,20 @@
     }
   }
 
-  let qrInstance = null;
-
   function buildQR(url) {
     const el = document.getElementById('qrcode');
     if (!el) return;
     el.innerHTML = '';
-    qrInstance = new QRCode(el, {
-      text:         url,
-      width:        148,
-      height:       148,
-      colorDark:    '#6C63FF',
-      colorLight:   '#0E0E24',
-      correctLevel: QRCode.CorrectLevel.M,
-    });
+    new QRCode(el, { text: url, width: 148, height: 148,
+      colorDark: '#6C63FF', colorLight: '#0E0E24', correctLevel: QRCode.CorrectLevel.M });
+  }
+
+  function buildFireQR(url) {
+    const el = document.getElementById('qrcodefire');
+    if (!el) return;
+    el.innerHTML = '';
+    new QRCode(el, { text: url, width: 148, height: 148,
+      colorDark: '#FF9900', colorLight: '#0E0E24', correctLevel: QRCode.CorrectLevel.M });
   }
 
   function showBuildingState() {
@@ -1088,14 +1295,20 @@
     if (dlSection) dlSection.innerHTML = notice;
 
     // Dim all download buttons
-    ['dlMobileArm64','dlMobileUniversal','dlMobileArm32','dlTvArm64','dlTvUniversal'].forEach(id => {
+    ['dlMobileArm64','dlMobileUniversal','dlMobileArm32',
+     'dlTvArm64','dlTvUniversal',
+     'dlFireArm64','dlFireArm32','dlFireUniversal'].forEach(id => {
       setDownloadBtn(id, null);
     });
     document.getElementById('navVersion').textContent = 'No release yet';
     document.getElementById('heroEyebrow').textContent = 'Coming Soon';
-    buildQR(`https://github.com/${OWNER}/${REPO}/releases`);
+    const fallbackUrl = `https://github.com/${OWNER}/${REPO}/releases`;
+    buildQR(fallbackUrl);
+    buildFireQR(fallbackUrl);
     const tvUrl = document.getElementById('tvUrl');
     if (tvUrl) tvUrl.textContent = `github.com/${OWNER}/${REPO}/releases`;
+    const fireUrl = document.getElementById('fireUrl');
+    if (fireUrl) fireUrl.textContent = `github.com/${OWNER}/${REPO}/releases`;
   }
 
   // ── Fetch latest release from GitHub API ──────────────────────────────────
@@ -1128,13 +1341,22 @@
       setDownloadBtn('dlMobileArm32',    URLS.arm32);
       setDownloadBtn('dlTvArm64',        URLS.arm64);
       setDownloadBtn('dlTvUniversal',    URLS.universal);
+      setDownloadBtn('dlFireArm64',      URLS.arm64);
+      setDownloadBtn('dlFireArm32',      URLS.arm32);
+      setDownloadBtn('dlFireUniversal',  URLS.universal);
 
       // TV URL code block
       const tvUrl = document.getElementById('tvUrl');
       if (tvUrl) tvUrl.textContent = URLS.arm64 || `github.com/${OWNER}/${REPO}/releases`;
 
-      // QR code
-      buildQR(URLS.arm64 || `https://github.com/${OWNER}/${REPO}/releases`);
+      // Fire URL code block
+      const fireUrl = document.getElementById('fireUrl');
+      if (fireUrl) fireUrl.textContent = URLS.arm64 || `github.com/${OWNER}/${REPO}/releases`;
+
+      // QR codes
+      const dlUrl = URLS.arm64 || `https://github.com/${OWNER}/${REPO}/releases`;
+      buildQR(dlUrl);
+      buildFireQR(dlUrl);
 
     } catch (_) {
       showBuildingState();

@@ -652,7 +652,7 @@
   <section class="hero">
     <div class="hero-eyebrow">
       <span class="dot"></span>
-      Now Available
+      <span id="heroEyebrow">Now Available</span>
     </div>
 
     <h1>
@@ -751,6 +751,9 @@
         <h2>Download UHVA Player</h2>
         <p>Choose your device type below — phone or TV box — and grab the right APK.</p>
       </div>
+
+      <!-- Dynamic notice injected here when no release exists -->
+      <div id="download-notice"></div>
 
       <!-- Device tabs -->
       <div class="device-tabs">
@@ -1022,35 +1025,123 @@
 
 <script>
   // ── Config ─────────────────────────────────────────────────────────────────
-  const OWNER   = 'saviour26';
-  const REPO    = 'uhva-';
-  const VERSION = 'v1.0.0';
-  const BASE    = `https://github.com/${OWNER}/${REPO}/releases/download/${VERSION}`;
+  const OWNER = 'saviour26';
+  const REPO  = 'uhva-';
 
-  const URLS = {
-    arm64:     `${BASE}/app-arm64-v8a-release.apk`,
-    arm32:     `${BASE}/app-armeabi-v7a-release.apk`,
-    universal: `${BASE}/app-release.apk`,
-  };
+  // ── Helpers ────────────────────────────────────────────────────────────────
+  function setDownloadBtn(id, url, label) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (url) {
+      el.href = url;
+      el.removeAttribute('disabled');
+      el.style.opacity = '1';
+      el.style.pointerEvents = 'auto';
+    } else {
+      el.href = '#';
+      el.style.opacity = '0.4';
+      el.style.pointerEvents = 'none';
+      el.title = 'Not yet available — check back soon';
+    }
+  }
 
-  // Wire up all download buttons
-  document.getElementById('navVersion').textContent       = VERSION;
-  document.getElementById('dlMobileArm64').href           = URLS.arm64;
-  document.getElementById('dlMobileUniversal').href       = URLS.universal;
-  document.getElementById('dlMobileArm32').href           = URLS.arm32;
-  document.getElementById('dlTvArm64').href               = URLS.arm64;
-  document.getElementById('dlTvUniversal').href           = URLS.universal;
-  document.getElementById('tvUrl').textContent            = URLS.arm64;
+  let qrInstance = null;
 
-  // QR code
-  new QRCode(document.getElementById('qrcode'), {
-    text:         URLS.arm64,
-    width:        148,
-    height:       148,
-    colorDark:    '#6C63FF',
-    colorLight:   '#0E0E24',
-    correctLevel: QRCode.CorrectLevel.M,
-  });
+  function buildQR(url) {
+    const el = document.getElementById('qrcode');
+    if (!el) return;
+    el.innerHTML = '';
+    qrInstance = new QRCode(el, {
+      text:         url,
+      width:        148,
+      height:       148,
+      colorDark:    '#6C63FF',
+      colorLight:   '#0E0E24',
+      correctLevel: QRCode.CorrectLevel.M,
+    });
+  }
+
+  function showBuildingState() {
+    const notice = `
+      <div style="
+        background:rgba(251,191,36,0.1);
+        border:1px solid rgba(251,191,36,0.3);
+        border-radius:12px;
+        padding:16px 20px;
+        margin-bottom:20px;
+        display:flex;
+        align-items:center;
+        gap:12px;
+        font-size:13px;
+        color:#FCD34D;
+      ">
+        <span style="font-size:20px;">🔨</span>
+        <div>
+          <b style="display:block;margin-bottom:3px;">APK Build In Progress</b>
+          No release has been published yet. Trigger the build from
+          <a href="https://github.com/${OWNER}/${REPO}/actions" target="_blank"
+             style="color:#FCD34D;text-decoration:underline;">GitHub Actions → Run workflow</a>,
+          then refresh this page.
+        </div>
+      </div>`;
+    const dlSection = document.getElementById('download-notice');
+    if (dlSection) dlSection.innerHTML = notice;
+
+    // Dim all download buttons
+    ['dlMobileArm64','dlMobileUniversal','dlMobileArm32','dlTvArm64','dlTvUniversal'].forEach(id => {
+      setDownloadBtn(id, null);
+    });
+    document.getElementById('navVersion').textContent = 'No release yet';
+    document.getElementById('heroEyebrow').textContent = 'Coming Soon';
+    buildQR(`https://github.com/${OWNER}/${REPO}/releases`);
+    const tvUrl = document.getElementById('tvUrl');
+    if (tvUrl) tvUrl.textContent = `github.com/${OWNER}/${REPO}/releases`;
+  }
+
+  // ── Fetch latest release from GitHub API ──────────────────────────────────
+  async function loadRelease() {
+    try {
+      const res = await fetch(
+        `https://api.github.com/repos/${OWNER}/${REPO}/releases/latest`,
+        { headers: { Accept: 'application/vnd.github+json' } }
+      );
+      if (!res.ok) throw new Error('no release');
+      const data = await res.json();
+
+      const assets  = data.assets || [];
+      const find    = (pattern) => assets.find(a => a.name.match(pattern))?.browser_download_url || null;
+
+      const URLS = {
+        arm64:     find(/arm64-v8a.*release\.apk$/),
+        arm32:     find(/armeabi-v7a.*release\.apk$/),
+        universal: find(/^app-release\.apk$/),
+      };
+
+      const version = data.tag_name || 'latest';
+
+      // Update version badges
+      document.getElementById('navVersion').textContent = version;
+
+      // Wire buttons
+      setDownloadBtn('dlMobileArm64',    URLS.arm64);
+      setDownloadBtn('dlMobileUniversal',URLS.universal);
+      setDownloadBtn('dlMobileArm32',    URLS.arm32);
+      setDownloadBtn('dlTvArm64',        URLS.arm64);
+      setDownloadBtn('dlTvUniversal',    URLS.universal);
+
+      // TV URL code block
+      const tvUrl = document.getElementById('tvUrl');
+      if (tvUrl) tvUrl.textContent = URLS.arm64 || `github.com/${OWNER}/${REPO}/releases`;
+
+      // QR code
+      buildQR(URLS.arm64 || `https://github.com/${OWNER}/${REPO}/releases`);
+
+    } catch (_) {
+      showBuildingState();
+    }
+  }
+
+  loadRelease();
 
   // ── Tab switching ──────────────────────────────────────────────────────────
   function switchTab(id, btn) {

@@ -3,257 +3,1025 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>UHVA Player — Download</title>
+  <title>UHVA Player — Professional IPTV for Android &amp; Android TV</title>
+  <meta name="description" content="UHVA Player is a professional IPTV player for Android phones and Android TV. Stream live channels, movies, and series in stunning quality." />
+
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --primary:   #6C63FF;
+      --primary-d: #4B44CC;
+      --primary-l: #9D97FF;
+      --bg:        #07071A;
+      --surface:   #0E0E24;
+      --card:      #181832;
+      --border:    rgba(108,99,255,0.18);
+      --text:      #E8E8FF;
+      --muted:     #6060A0;
+      --live:      #E53935;
+    }
+
+    html { scroll-behavior: smooth; }
 
     body {
-      background: #07071A;
-      color: #E8E8FF;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
       min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 24px;
+      overflow-x: hidden;
     }
 
-    .card {
-      background: #0E0E24;
-      border: 1px solid #1E1E40;
-      border-radius: 20px;
-      padding: 40px 36px;
-      max-width: 480px;
-      width: 100%;
-      text-align: center;
+    /* ── Animated background canvas ───────────────────────────────── */
+    #bg-canvas {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
     }
 
-    .logo {
-      width: 80px;
-      height: 80px;
-      background: #181832;
-      border-radius: 20px;
+    /* ── Nav ────────────────────────────────────────────────────────── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
       display: flex;
       align-items: center;
-      justify-content: center;
-      margin: 0 auto 20px;
+      justify-content: space-between;
+      padding: 16px 40px;
+      background: rgba(7,7,26,0.75);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
     }
 
-    .logo svg { width: 48px; height: 48px; }
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+    }
 
-    h1 {
-      font-size: 26px;
+    .nav-logo-icon {
+      width: 36px; height: 36px;
+      background: var(--primary);
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .nav-logo-icon svg { width: 20px; height: 20px; }
+
+    .nav-logo-text {
+      font-size: 17px;
       font-weight: 700;
       color: #fff;
-      margin-bottom: 6px;
+      letter-spacing: -0.3px;
     }
 
-    .tagline {
-      font-size: 13px;
-      color: #6060A0;
-      margin-bottom: 32px;
-    }
-
-    .version-badge {
-      display: inline-block;
+    .nav-badge {
       background: rgba(108,99,255,0.15);
-      color: #6C63FF;
-      border: 1px solid rgba(108,99,255,0.3);
+      color: var(--primary-l);
+      border: 1px solid var(--border);
       border-radius: 20px;
-      padding: 4px 14px;
+      padding: 4px 12px;
       font-size: 12px;
       font-weight: 600;
+    }
+
+    /* ── Main content ───────────────────────────────────────────────── */
+    main {
+      position: relative;
+      z-index: 1;
+      padding-top: 72px;
+    }
+
+    /* ── Hero ───────────────────────────────────────────────────────── */
+    .hero {
+      text-align: center;
+      padding: 90px 24px 70px;
+      max-width: 860px;
+      margin: 0 auto;
+    }
+
+    .hero-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      background: rgba(108,99,255,0.12);
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      padding: 5px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--primary-l);
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
       margin-bottom: 28px;
+    }
+
+    .hero-eyebrow .dot {
+      width: 6px; height: 6px;
+      background: var(--live);
+      border-radius: 50%;
+      animation: pulse 1.8s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%,100% { opacity: 1; transform: scale(1); }
+      50%      { opacity: 0.4; transform: scale(0.7); }
+    }
+
+    .hero h1 {
+      font-size: clamp(38px, 7vw, 72px);
+      font-weight: 800;
+      line-height: 1.08;
+      letter-spacing: -2px;
+      color: #fff;
+      margin-bottom: 20px;
+    }
+
+    .hero h1 .gradient-text {
+      background: linear-gradient(135deg, #6C63FF 0%, #A78BFA 50%, #60A5FA 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-sub {
+      font-size: clamp(15px, 2.5vw, 19px);
+      color: var(--muted);
+      line-height: 1.6;
+      max-width: 580px;
+      margin: 0 auto 44px;
+    }
+
+    .hero-cta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      justify-content: center;
+    }
+
+    /* ── Buttons ────────────────────────────────────────────────────── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      text-decoration: none;
+      font-weight: 700;
+      border-radius: 14px;
+      transition: transform 0.18s, box-shadow 0.18s, background 0.18s;
+      cursor: pointer;
+      border: none;
+    }
+
+    .btn:hover { transform: translateY(-2px); }
+    .btn:active { transform: translateY(0); }
+
+    .btn-xl {
+      padding: 17px 30px;
+      font-size: 16px;
     }
 
     .btn-primary {
-      display: block;
-      background: #6C63FF;
+      background: var(--primary);
       color: #fff;
-      text-decoration: none;
-      border-radius: 12px;
-      padding: 16px 24px;
-      font-size: 16px;
-      font-weight: 700;
-      margin-bottom: 12px;
-      transition: background 0.2s;
+      box-shadow: 0 8px 32px rgba(108,99,255,0.4);
     }
-    .btn-primary:hover { background: #857DFF; }
-
-    .btn-secondary {
-      display: block;
-      background: #181832;
-      color: #A0A0C8;
-      text-decoration: none;
-      border-radius: 12px;
-      padding: 12px 24px;
-      font-size: 13px;
-      font-weight: 500;
-      margin-bottom: 8px;
-      transition: background 0.2s;
-    }
-    .btn-secondary:hover { background: #222244; }
-
-    .btn-label { font-size: 10px; opacity: 0.7; display: block; margin-top: 2px; }
-
-    .divider {
-      border: none;
-      border-top: 1px solid #1A1A36;
-      margin: 28px 0;
+    .btn-primary:hover {
+      background: #857DFF;
+      box-shadow: 0 12px 40px rgba(108,99,255,0.55);
     }
 
-    .qr-section h3 {
-      font-size: 13px;
-      color: #6060A0;
+    .btn-ghost {
+      background: rgba(255,255,255,0.06);
+      color: var(--text);
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .btn-ghost:hover {
+      background: rgba(255,255,255,0.1);
+    }
+
+    /* ── Stats row ──────────────────────────────────────────────────── */
+    .stats {
+      display: flex;
+      justify-content: center;
+      gap: 0;
+      flex-wrap: wrap;
+      max-width: 700px;
+      margin: 60px auto 0;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      background: var(--surface);
+      overflow: hidden;
+    }
+
+    .stat {
+      flex: 1;
+      min-width: 130px;
+      padding: 22px 20px;
+      text-align: center;
+      border-right: 1px solid var(--border);
+    }
+    .stat:last-child { border-right: none; }
+
+    .stat-value {
+      font-size: 26px;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -1px;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 3px;
       text-transform: uppercase;
-      letter-spacing: 1px;
+      letter-spacing: 0.5px;
+    }
+
+    /* ── Section labels ─────────────────────────────────────────────── */
+    .section {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 80px 24px;
+    }
+
+    .section-label {
+      text-align: center;
+      margin-bottom: 50px;
+    }
+
+    .section-label h2 {
+      font-size: clamp(26px, 4vw, 40px);
+      font-weight: 800;
+      letter-spacing: -1px;
+      color: #fff;
+      margin-bottom: 10px;
+    }
+
+    .section-label p {
+      color: var(--muted);
+      font-size: 15px;
+      max-width: 520px;
+      margin: 0 auto;
+    }
+
+    /* ── Features grid ──────────────────────────────────────────────── */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+    }
+
+    .feature-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 28px;
+      transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+    }
+
+    .feature-card:hover {
+      border-color: var(--primary);
+      transform: translateY(-4px);
+      box-shadow: 0 16px 48px rgba(108,99,255,0.15);
+    }
+
+    .feature-icon {
+      width: 48px; height: 48px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
       margin-bottom: 16px;
     }
 
-    #qrcode {
+    .feature-card h3 {
+      font-size: 16px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 8px;
+    }
+
+    .feature-card p {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    /* ── Download section ───────────────────────────────────────────── */
+    .download-section {
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .device-tabs {
       display: flex;
-      justify-content: center;
-      margin-bottom: 12px;
+      gap: 8px;
+      margin-bottom: 36px;
+      background: var(--card);
+      border-radius: 16px;
+      padding: 6px;
+      max-width: 360px;
     }
 
-    #qrcode canvas, #qrcode img {
-      border-radius: 10px;
-      border: 3px solid #181832;
-    }
-
-    .qr-hint {
-      font-size: 11px;
-      color: #5050A0;
-      margin-bottom: 28px;
-    }
-
-    .install-steps {
-      text-align: left;
-      background: #0A0A1E;
+    .tab-btn {
+      flex: 1;
+      padding: 11px 20px;
+      border: none;
       border-radius: 12px;
-      padding: 20px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+      background: transparent;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
     }
 
-    .install-steps h3 {
-      font-size: 12px;
-      color: #6C63FF;
+    .tab-btn.active {
+      background: var(--primary);
+      color: #fff;
+      box-shadow: 0 4px 16px rgba(108,99,255,0.4);
+    }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    .download-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    @media (max-width: 640px) {
+      .download-grid { grid-template-columns: 1fr; }
+    }
+
+    .dl-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      transition: border-color 0.2s;
+    }
+
+    .dl-card.featured {
+      border-color: var(--primary);
+      background: rgba(108,99,255,0.07);
+      position: relative;
+    }
+
+    .dl-card.featured::before {
+      content: 'Recommended';
+      position: absolute;
+      top: -11px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--primary);
+      color: #fff;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
       text-transform: uppercase;
-      letter-spacing: 1px;
-      margin-bottom: 14px;
+      padding: 3px 12px;
+      border-radius: 20px;
+    }
+
+    .dl-card-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .dl-icon {
+      width: 44px; height: 44px;
+      border-radius: 11px;
+      background: rgba(108,99,255,0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+
+    .dl-card-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .dl-card-sub {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .dl-meta {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .chip {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 6px;
+      padding: 3px 9px;
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .chip.green { background: rgba(52,211,153,0.1); color: #34D399; border-color: rgba(52,211,153,0.2); }
+
+    .btn-download {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      text-decoration: none;
+      border-radius: 12px;
+      padding: 13px 20px;
+      font-size: 14px;
+      font-weight: 700;
+      transition: transform 0.18s, box-shadow 0.18s, background 0.18s;
+      margin-top: auto;
+    }
+
+    .btn-download:hover { transform: translateY(-2px); }
+
+    .btn-download-primary {
+      background: var(--primary);
+      color: #fff;
+      box-shadow: 0 6px 24px rgba(108,99,255,0.35);
+    }
+    .btn-download-primary:hover {
+      background: #857DFF;
+      box-shadow: 0 10px 30px rgba(108,99,255,0.5);
+    }
+
+    .btn-download-secondary {
+      background: rgba(255,255,255,0.05);
+      color: var(--text);
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .btn-download-secondary:hover { background: rgba(255,255,255,0.1); }
+
+    /* ── QR + steps row ─────────────────────────────────────────────── */
+    .install-row {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 40px;
+      align-items: start;
+      margin-top: 40px;
+      padding-top: 36px;
+      border-top: 1px solid var(--border);
+    }
+
+    @media (max-width: 720px) {
+      .install-row { grid-template-columns: 1fr; }
+    }
+
+    .qr-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .qr-frame {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 16px;
+    }
+
+    #qrcode canvas, #qrcode img { border-radius: 8px; display: block; }
+
+    .qr-label {
+      font-size: 12px;
+      color: var(--muted);
+      text-align: center;
+      max-width: 160px;
+    }
+
+    .steps-list {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .steps-list h3 {
+      font-size: 16px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 4px;
     }
 
     .step {
       display: flex;
-      gap: 12px;
-      margin-bottom: 12px;
+      gap: 14px;
       align-items: flex-start;
     }
-    .step:last-child { margin-bottom: 0; }
 
     .step-num {
-      background: #6C63FF;
-      color: #fff;
+      width: 26px; height: 26px;
+      min-width: 26px;
+      background: rgba(108,99,255,0.2);
+      border: 1px solid var(--primary);
       border-radius: 50%;
-      width: 22px;
-      height: 22px;
-      min-width: 22px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 11px;
+      font-size: 12px;
       font-weight: 700;
+      color: var(--primary-l);
       margin-top: 1px;
     }
 
     .step-text {
-      font-size: 13px;
-      color: #A0A0CC;
-      line-height: 1.5;
+      font-size: 14px;
+      color: var(--muted);
+      line-height: 1.55;
     }
 
-    .step-text b { color: #E0E0FF; }
+    .step-text b { color: var(--text); }
+    .step-text code {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      padding: 1px 7px;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 12px;
+      color: var(--primary-l);
+      word-break: break-all;
+    }
 
-    .footer {
-      margin-top: 32px;
-      font-size: 11px;
-      color: #3A3A60;
+    /* ── Glow divider ───────────────────────────────────────────────── */
+    .glow-divider {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--primary), transparent);
+      opacity: 0.35;
+      margin: 0;
+    }
+
+    /* ── Footer ─────────────────────────────────────────────────────── */
+    footer {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      padding: 36px 24px;
+      border-top: 1px solid var(--border);
+    }
+
+    .footer-logo {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+      margin-bottom: 12px;
+    }
+
+    .footer-logo-icon {
+      width: 30px; height: 30px;
+      background: var(--primary);
+      border-radius: 7px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .footer-logo-icon svg { width: 16px; height: 16px; }
+
+    .footer-name {
+      font-size: 15px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .footer-copy {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.8;
+    }
+
+    .footer-copy a { color: var(--primary-l); text-decoration: none; }
+    .footer-copy a:hover { text-decoration: underline; }
+
+    /* ── Responsive ─────────────────────────────────────────────────── */
+    @media (max-width: 640px) {
+      nav { padding: 14px 20px; }
+      .hero { padding: 70px 20px 50px; }
+      .stats { margin: 40px 20px 0; border-radius: 14px; }
+      .stat { min-width: 100px; padding: 18px 14px; }
+      .device-tabs { max-width: 100%; }
     }
   </style>
 </head>
 <body>
 
-<div class="card">
+<canvas id="bg-canvas"></canvas>
 
-  <!-- Logo -->
-  <div class="logo">
-    <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect x="4" y="4" width="40" height="40" rx="10" fill="#6C63FF"/>
-      <polygon points="18,14 18,34 36,24" fill="white"/>
-    </svg>
-  </div>
-
-  <h1>UHVA Player</h1>
-  <p class="tagline">Professional IPTV Player for Android &amp; Android TV</p>
-
-  <div class="version-badge" id="versionBadge">v1.0.0</div>
-
-  <!-- Primary download: arm64 (most TV boxes + modern phones) -->
-  <a class="btn-primary" id="btnArm64" href="#" download>
-    ⬇ Download APK
-    <span class="btn-label">ARM 64-bit · Recommended for most Android TV boxes &amp; phones</span>
+<!-- ── Navigation ──────────────────────────────────────────────────── -->
+<nav>
+  <a class="nav-logo" href="#">
+    <div class="nav-logo-icon">
+      <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <polygon points="5,3 5,17 17,10" fill="white"/>
+      </svg>
+    </div>
+    <span class="nav-logo-text">UHVA Player</span>
   </a>
+  <span class="nav-badge" id="navVersion">v1.0.0</span>
+</nav>
 
-  <!-- Other architectures -->
-  <a class="btn-secondary" id="btnUniversal" href="#" download>
-    Universal APK (all devices)
-    <span class="btn-label">Larger file — use if arm64 doesn't install</span>
-  </a>
-  <a class="btn-secondary" id="btnArm32" href="#" download>
-    ARM 32-bit APK
-    <span class="btn-label">Older Android devices &amp; some TV sticks</span>
-  </a>
+<!-- ── Main ───────────────────────────────────────────────────────── -->
+<main>
 
-  <hr class="divider"/>
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-eyebrow">
+      <span class="dot"></span>
+      Now Available
+    </div>
 
-  <!-- QR Code -->
-  <div class="qr-section">
-    <h3>Scan to download on TV</h3>
-    <div id="qrcode"></div>
-    <p class="qr-hint">Scan this QR with your phone, then open the link on your TV browser</p>
+    <h1>
+      Professional IPTV<br/>
+      for <span class="gradient-text">Android &amp; TV</span>
+    </h1>
+
+    <p class="hero-sub">
+      Stream live channels, movies, and series with stunning quality.
+      Built for Android phones and Android TV boxes — one app, every screen.
+    </p>
+
+    <div class="hero-cta">
+      <a href="#download" class="btn btn-primary btn-xl">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+          <path d="M12 16l-5-5h3V4h4v7h3l-5 5z" fill="white"/>
+          <path d="M5 20h14v-2H5v2z" fill="white"/>
+        </svg>
+        Download APK
+      </a>
+      <a href="#features" class="btn btn-ghost btn-xl">
+        Explore Features
+      </a>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-value">10K+</div>
+        <div class="stat-label">Live Channels</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value">50K+</div>
+        <div class="stat-label">Movies &amp; Series</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value">4K</div>
+        <div class="stat-label">Ultra HD</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value">2</div>
+        <div class="stat-label">Device Types</div>
+      </div>
+    </div>
+  </section>
+
+  <div class="glow-divider"></div>
+
+  <!-- Features -->
+  <section class="section" id="features">
+    <div class="section-label">
+      <h2>Everything You Need</h2>
+      <p>A complete entertainment platform packed into one seamless app experience.</p>
+    </div>
+
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon" style="background:rgba(229,57,53,0.15);">📡</div>
+        <h3>Live TV Channels</h3>
+        <p>Access thousands of live channels in HD and 4K — sports, news, entertainment, and more — with real-time EPG programme guide.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" style="background:rgba(108,99,255,0.15);">🎬</div>
+        <h3>Movies on Demand</h3>
+        <p>Browse a massive VOD library organised by genre. Stream any movie instantly with no buffering using adaptive bitrate.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" style="background:rgba(96,165,250,0.15);">📺</div>
+        <h3>TV Series</h3>
+        <p>Full series support with season tabs and episode lists. Pick up exactly where you left off across all your devices.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" style="background:rgba(52,211,153,0.15);">🖥️</div>
+        <h3>Android TV Optimised</h3>
+        <p>Purpose-built TV interface with full D-pad navigation, focus states, and a side-nav layout designed for your remote control.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" style="background:rgba(251,191,36,0.15);">📅</div>
+        <h3>EPG Programme Guide</h3>
+        <p>Full-screen interactive TV guide showing current and upcoming programmes. Never miss a show again.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" style="background:rgba(167,139,250,0.15);">⭐</div>
+        <h3>Favourites &amp; History</h3>
+        <p>Save your favourite channels and pick up recently watched content instantly — all stored locally on device.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="glow-divider"></div>
+
+  <!-- Download -->
+  <section class="download-section" id="download">
+    <div class="section" style="padding-top:70px; padding-bottom:70px;">
+      <div class="section-label">
+        <h2>Download UHVA Player</h2>
+        <p>Choose your device type below — phone or TV box — and grab the right APK.</p>
+      </div>
+
+      <!-- Device tabs -->
+      <div class="device-tabs">
+        <button class="tab-btn active" onclick="switchTab('mobile', this)">
+          📱 Android Phone
+        </button>
+        <button class="tab-btn" onclick="switchTab('tv', this)">
+          📺 Android TV
+        </button>
+      </div>
+
+      <!-- Mobile tab -->
+      <div class="tab-panel active" id="tab-mobile">
+        <div class="download-grid">
+          <!-- ARM64 -->
+          <div class="dl-card featured">
+            <div class="dl-card-header">
+              <div class="dl-icon">💪</div>
+              <div>
+                <div class="dl-card-title">ARM 64-bit</div>
+                <div class="dl-card-sub">Recommended for most phones</div>
+              </div>
+            </div>
+            <div class="dl-meta">
+              <span class="chip green">Best Performance</span>
+              <span class="chip">Android 5.0+</span>
+              <span class="chip">arm64-v8a</span>
+            </div>
+            <p style="font-size:13px; color:var(--muted); line-height:1.5;">
+              For Samsung, Pixel, OnePlus, Xiaomi, and virtually all phones made after 2015.
+            </p>
+            <a class="btn-download btn-download-primary" id="dlMobileArm64" href="#" download>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <path d="M12 16l-5-5h3V4h4v7h3l-5 5z" fill="white"/>
+                <path d="M5 20h14v-2H5v2z" fill="white"/>
+              </svg>
+              Download APK
+            </a>
+          </div>
+
+          <!-- Universal -->
+          <div class="dl-card">
+            <div class="dl-card-header">
+              <div class="dl-icon">🌐</div>
+              <div>
+                <div class="dl-card-title">Universal APK</div>
+                <div class="dl-card-sub">Works on all architectures</div>
+              </div>
+            </div>
+            <div class="dl-meta">
+              <span class="chip">All Devices</span>
+              <span class="chip">Larger File</span>
+            </div>
+            <p style="font-size:13px; color:var(--muted); line-height:1.5;">
+              Use this if the ARM 64-bit APK fails to install on your device.
+            </p>
+            <a class="btn-download btn-download-secondary" id="dlMobileUniversal" href="#" download>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <path d="M12 16l-5-5h3V4h4v7h3l-5 5z" fill="currentColor"/>
+                <path d="M5 20h14v-2H5v2z" fill="currentColor"/>
+              </svg>
+              Download Universal
+            </a>
+          </div>
+
+          <!-- ARM32 -->
+          <div class="dl-card">
+            <div class="dl-card-header">
+              <div class="dl-icon">📟</div>
+              <div>
+                <div class="dl-card-title">ARM 32-bit</div>
+                <div class="dl-card-sub">For older Android phones</div>
+              </div>
+            </div>
+            <div class="dl-meta">
+              <span class="chip">Legacy Support</span>
+              <span class="chip">armeabi-v7a</span>
+            </div>
+            <p style="font-size:13px; color:var(--muted); line-height:1.5;">
+              For devices running Android 4.x or older budget phones with 32-bit processors.
+            </p>
+            <a class="btn-download btn-download-secondary" id="dlMobileArm32" href="#" download>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <path d="M12 16l-5-5h3V4h4v7h3l-5 5z" fill="currentColor"/>
+                <path d="M5 20h14v-2H5v2z" fill="currentColor"/>
+              </svg>
+              Download ARM 32-bit
+            </a>
+          </div>
+
+          <!-- Install guide card -->
+          <div class="dl-card">
+            <div class="dl-card-header">
+              <div class="dl-icon">📋</div>
+              <div>
+                <div class="dl-card-title">Install Guide</div>
+                <div class="dl-card-sub">Side-load in 3 steps</div>
+              </div>
+            </div>
+            <div class="steps-list" style="margin-top:4px;">
+              <div class="step">
+                <div class="step-num">1</div>
+                <div class="step-text">Download the APK to your phone</div>
+              </div>
+              <div class="step">
+                <div class="step-num">2</div>
+                <div class="step-text">Open the file — tap <b>Settings → Allow from this source</b> if prompted</div>
+              </div>
+              <div class="step">
+                <div class="step-num">3</div>
+                <div class="step-text">Tap <b>Install</b> and launch UHVA Player</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TV tab -->
+      <div class="tab-panel" id="tab-tv">
+        <div class="download-grid">
+          <!-- TV arm64 -->
+          <div class="dl-card featured">
+            <div class="dl-card-header">
+              <div class="dl-icon">🔥</div>
+              <div>
+                <div class="dl-card-title">Android TV — ARM 64-bit</div>
+                <div class="dl-card-sub">Best for Nvidia Shield, Mi Box, Fire TV 4K</div>
+              </div>
+            </div>
+            <div class="dl-meta">
+              <span class="chip green">TV Optimised</span>
+              <span class="chip">arm64-v8a</span>
+            </div>
+            <p style="font-size:13px; color:var(--muted); line-height:1.5;">
+              Full D-pad navigation, side-nav UI, remote-friendly layout — designed for the big screen.
+            </p>
+            <a class="btn-download btn-download-primary" id="dlTvArm64" href="#" download>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <path d="M12 16l-5-5h3V4h4v7h3l-5 5z" fill="white"/>
+                <path d="M5 20h14v-2H5v2z" fill="white"/>
+              </svg>
+              Download for TV
+            </a>
+          </div>
+
+          <!-- TV Universal -->
+          <div class="dl-card">
+            <div class="dl-card-header">
+              <div class="dl-icon">📦</div>
+              <div>
+                <div class="dl-card-title">TV Universal APK</div>
+                <div class="dl-card-sub">For all TV box architectures</div>
+              </div>
+            </div>
+            <div class="dl-meta">
+              <span class="chip">All TV Boxes</span>
+              <span class="chip">Larger File</span>
+            </div>
+            <p style="font-size:13px; color:var(--muted); line-height:1.5;">
+              Works on x86, ARM32, and ARM64 TV boxes. Use if the ARM 64-bit build won't install.
+            </p>
+            <a class="btn-download btn-download-secondary" id="dlTvUniversal" href="#" download>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <path d="M12 16l-5-5h3V4h4v7h3l-5 5z" fill="currentColor"/>
+                <path d="M5 20h14v-2H5v2z" fill="currentColor"/>
+              </svg>
+              Download Universal
+            </a>
+          </div>
+        </div>
+
+        <!-- QR + install steps -->
+        <div class="install-row">
+          <div class="qr-box">
+            <div class="qr-frame">
+              <div id="qrcode"></div>
+            </div>
+            <p class="qr-label">Scan with phone to get the TV download link</p>
+          </div>
+
+          <div>
+            <div class="steps-list">
+              <h3>📥 How to Install on Android TV</h3>
+              <div class="step">
+                <div class="step-num">1</div>
+                <div class="step-text">
+                  Install <b>Downloader by AFTVnews</b> from the Google Play Store on your TV
+                </div>
+              </div>
+              <div class="step">
+                <div class="step-num">2</div>
+                <div class="step-text">
+                  Open Downloader and enter this URL:<br/>
+                  <code id="tvUrl"></code>
+                </div>
+              </div>
+              <div class="step">
+                <div class="step-num">3</div>
+                <div class="step-text">
+                  Tap <b>Go</b> — the APK downloads automatically to your TV
+                </div>
+              </div>
+              <div class="step">
+                <div class="step-num">4</div>
+                <div class="step-text">
+                  Tap <b>Install</b> when prompted. If asked, enable <b>Unknown Sources</b> in
+                  <b>Settings → Security</b>
+                </div>
+              </div>
+              <div class="step">
+                <div class="step-num">5</div>
+                <div class="step-text">
+                  Launch <b>UHVA Player</b> from your apps, enter your IPTV credentials, and enjoy!
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <div class="glow-divider"></div>
+
+  <!-- Compatibility note -->
+  <section class="section" style="padding-top:60px; padding-bottom:60px;">
+    <div class="section-label" style="margin-bottom:30px;">
+      <h2>Device Compatibility</h2>
+      <p>UHVA Player is tested and optimised across a wide range of Android devices.</p>
+    </div>
+
+    <div style="display:flex; flex-wrap:wrap; gap:12px; justify-content:center; max-width:800px; margin:0 auto;">
+      <span style="background:var(--surface); border:1px solid var(--border); border-radius:100px; padding:8px 18px; font-size:13px; color:var(--text);">📱 Samsung Galaxy</span>
+      <span style="background:var(--surface); border:1px solid var(--border); border-radius:100px; padding:8px 18px; font-size:13px; color:var(--text);">📱 Google Pixel</span>
+      <span style="background:var(--surface); border:1px solid var(--border); border-radius:100px; padding:8px 18px; font-size:13px; color:var(--text);">📱 OnePlus</span>
+      <span style="background:var(--surface); border:1px solid var(--border); border-radius:100px; padding:8px 18px; font-size:13px; color:var(--text);">📱 Xiaomi / Redmi</span>
+      <span style="background:var(--surface); border:1px solid var(--border); border-radius:100px; padding:8px 18px; font-size:13px; color:var(--text);">📱 Realme / Oppo</span>
+      <span style="background:var(--surface); border:1px solid var(--border); border-radius:100px; padding:8px 18px; font-size:13px; color:var(--text);">📺 Nvidia Shield TV</span>
+      <span style="background:var(--surface); border:1px solid var(--border); border-radius:100px; padding:8px 18px; font-size:13px; color:var(--text);">📺 Mi Box S</span>
+      <span style="background:var(--surface); border:1px solid var(--border); border-radius:100px; padding:8px 18px; font-size:13px; color:var(--text);">📺 Amazon Fire TV 4K</span>
+      <span style="background:var(--surface); border:1px solid var(--border); border-radius:100px; padding:8px 18px; font-size:13px; color:var(--text);">📺 Chromecast w/ Google TV</span>
+      <span style="background:var(--surface); border:1px solid var(--border); border-radius:100px; padding:8px 18px; font-size:13px; color:var(--text);">📺 Android TV Boxes</span>
+    </div>
+  </section>
+
+</main>
+
+<div class="glow-divider"></div>
+
+<!-- Footer -->
+<footer>
+  <div class="footer-logo">
+    <div class="footer-logo-icon">
+      <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <polygon points="3,2 3,14 14,8" fill="white"/>
+      </svg>
+    </div>
+    <span class="footer-name">UHVA Player</span>
   </div>
+  <p class="footer-copy">
+    Professional IPTV Player for Android &amp; Android TV<br/>
+    Built by <a href="https://github.com/saviour26" target="_blank" rel="noopener">Thirdsan Enterprises Ltd</a> · Kampala, Uganda
+  </p>
+</footer>
 
-  <hr class="divider"/>
-
-  <!-- TV install guide -->
-  <div class="install-steps">
-    <h3>Install on Android TV</h3>
-    <div class="step">
-      <div class="step-num">1</div>
-      <div class="step-text">Install <b>Downloader by AFTVnews</b> from the Google Play Store or App Store on your TV</div>
-    </div>
-    <div class="step">
-      <div class="step-num">2</div>
-      <div class="step-text">Open Downloader and enter this URL:<br/><b id="shortUrl" style="color:#6C63FF; word-break:break-all;"></b></div>
-    </div>
-    <div class="step">
-      <div class="step-num">3</div>
-      <div class="step-text">Tap <b>Go</b> — the APK downloads automatically</div>
-    </div>
-    <div class="step">
-      <div class="step-num">4</div>
-      <div class="step-text">Tap <b>Install</b> when prompted. Enable <b>Unknown Sources</b> in Settings if asked</div>
-    </div>
-  </div>
-
-</div>
-
-<p class="footer">Built by Thirdsan Enterprises Ltd · Kampala, Uganda</p>
-
-<!-- QR code library (vanilla JS, no external dependencies at runtime) -->
+<!-- QR Code library -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
 <script>
-  // ── Config ────────────────────────────────────────────────────────────────
+  // ── Config ─────────────────────────────────────────────────────────────────
   const OWNER   = 'saviour26';
   const REPO    = 'uhva-';
   const VERSION = 'v1.0.0';
@@ -265,22 +1033,91 @@
     universal: `${BASE}/app-release.apk`,
   };
 
-  // ── Wire up download buttons ──────────────────────────────────────────────
-  document.getElementById('versionBadge').textContent = VERSION;
-  document.getElementById('btnArm64').href            = URLS.arm64;
-  document.getElementById('btnUniversal').href        = URLS.universal;
-  document.getElementById('btnArm32').href            = URLS.arm32;
-  document.getElementById('shortUrl').textContent     = URLS.arm64;
+  // Wire up all download buttons
+  document.getElementById('navVersion').textContent       = VERSION;
+  document.getElementById('dlMobileArm64').href           = URLS.arm64;
+  document.getElementById('dlMobileUniversal').href       = URLS.universal;
+  document.getElementById('dlMobileArm32').href           = URLS.arm32;
+  document.getElementById('dlTvArm64').href               = URLS.arm64;
+  document.getElementById('dlTvUniversal').href           = URLS.universal;
+  document.getElementById('tvUrl').textContent            = URLS.arm64;
 
-  // ── QR code (points to arm64 APK — best choice for TV boxes) ─────────────
+  // QR code
   new QRCode(document.getElementById('qrcode'), {
-    text:            URLS.arm64,
-    width:           160,
-    height:          160,
-    colorDark:       '#6C63FF',
-    colorLight:      '#0E0E24',
-    correctLevel:    QRCode.CorrectLevel.M,
+    text:         URLS.arm64,
+    width:        148,
+    height:       148,
+    colorDark:    '#6C63FF',
+    colorLight:   '#0E0E24',
+    correctLevel: QRCode.CorrectLevel.M,
   });
+
+  // ── Tab switching ──────────────────────────────────────────────────────────
+  function switchTab(id, btn) {
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-' + id).classList.add('active');
+    btn.classList.add('active');
+  }
+
+  // ── Animated particle background ─────────────────────────────────────────
+  (function () {
+    const canvas = document.getElementById('bg-canvas');
+    const ctx    = canvas.getContext('2d');
+    let W, H, particles;
+
+    function resize() {
+      W = canvas.width  = window.innerWidth;
+      H = canvas.height = window.innerHeight;
+    }
+
+    function mkParticle() {
+      return {
+        x: Math.random() * W,
+        y: Math.random() * H,
+        r: Math.random() * 1.4 + 0.4,
+        vx: (Math.random() - 0.5) * 0.25,
+        vy: (Math.random() - 0.5) * 0.25,
+        a: Math.random() * 0.35 + 0.05,
+      };
+    }
+
+    function init() {
+      resize();
+      particles = Array.from({ length: 90 }, mkParticle);
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, W, H);
+
+      // subtle radial glow at top-center
+      const grd = ctx.createRadialGradient(W / 2, 0, 0, W / 2, 0, W * 0.7);
+      grd.addColorStop(0, 'rgba(108,99,255,0.07)');
+      grd.addColorStop(1, 'rgba(7,7,26,0)');
+      ctx.fillStyle = grd;
+      ctx.fillRect(0, 0, W, H);
+
+      particles.forEach(p => {
+        p.x += p.vx;
+        p.y += p.vy;
+        if (p.x < 0) p.x = W;
+        if (p.x > W) p.x = 0;
+        if (p.y < 0) p.y = H;
+        if (p.y > H) p.y = 0;
+
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(108,99,255,${p.a})`;
+        ctx.fill();
+      });
+
+      requestAnimationFrame(draw);
+    }
+
+    init();
+    draw();
+    window.addEventListener('resize', init);
+  })();
 </script>
 
 </body>

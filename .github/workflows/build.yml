@@ -90,6 +90,8 @@ jobs:
     name: Release APK
     runs-on: ubuntu-latest
     if: (github.ref_type == 'tag' && startsWith(github.ref, 'refs/tags/v')) || github.event_name == 'workflow_dispatch'
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout code

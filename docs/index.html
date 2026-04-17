@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>UHVA Player — Download</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #07071A;
+      color: #E8E8FF;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .card {
+      background: #0E0E24;
+      border: 1px solid #1E1E40;
+      border-radius: 20px;
+      padding: 40px 36px;
+      max-width: 480px;
+      width: 100%;
+      text-align: center;
+    }
+
+    .logo {
+      width: 80px;
+      height: 80px;
+      background: #181832;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+    }
+
+    .logo svg { width: 48px; height: 48px; }
+
+    h1 {
+      font-size: 26px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 6px;
+    }
+
+    .tagline {
+      font-size: 13px;
+      color: #6060A0;
+      margin-bottom: 32px;
+    }
+
+    .version-badge {
+      display: inline-block;
+      background: rgba(108,99,255,0.15);
+      color: #6C63FF;
+      border: 1px solid rgba(108,99,255,0.3);
+      border-radius: 20px;
+      padding: 4px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 28px;
+    }
+
+    .btn-primary {
+      display: block;
+      background: #6C63FF;
+      color: #fff;
+      text-decoration: none;
+      border-radius: 12px;
+      padding: 16px 24px;
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      transition: background 0.2s;
+    }
+    .btn-primary:hover { background: #857DFF; }
+
+    .btn-secondary {
+      display: block;
+      background: #181832;
+      color: #A0A0C8;
+      text-decoration: none;
+      border-radius: 12px;
+      padding: 12px 24px;
+      font-size: 13px;
+      font-weight: 500;
+      margin-bottom: 8px;
+      transition: background 0.2s;
+    }
+    .btn-secondary:hover { background: #222244; }
+
+    .btn-label { font-size: 10px; opacity: 0.7; display: block; margin-top: 2px; }
+
+    .divider {
+      border: none;
+      border-top: 1px solid #1A1A36;
+      margin: 28px 0;
+    }
+
+    .qr-section h3 {
+      font-size: 13px;
+      color: #6060A0;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 16px;
+    }
+
+    #qrcode {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 12px;
+    }
+
+    #qrcode canvas, #qrcode img {
+      border-radius: 10px;
+      border: 3px solid #181832;
+    }
+
+    .qr-hint {
+      font-size: 11px;
+      color: #5050A0;
+      margin-bottom: 28px;
+    }
+
+    .install-steps {
+      text-align: left;
+      background: #0A0A1E;
+      border-radius: 12px;
+      padding: 20px;
+    }
+
+    .install-steps h3 {
+      font-size: 12px;
+      color: #6C63FF;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 14px;
+    }
+
+    .step {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 12px;
+      align-items: flex-start;
+    }
+    .step:last-child { margin-bottom: 0; }
+
+    .step-num {
+      background: #6C63FF;
+      color: #fff;
+      border-radius: 50%;
+      width: 22px;
+      height: 22px;
+      min-width: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+      margin-top: 1px;
+    }
+
+    .step-text {
+      font-size: 13px;
+      color: #A0A0CC;
+      line-height: 1.5;
+    }
+
+    .step-text b { color: #E0E0FF; }
+
+    .footer {
+      margin-top: 32px;
+      font-size: 11px;
+      color: #3A3A60;
+    }
+  </style>
+</head>
+<body>
+
+<div class="card">
+
+  <!-- Logo -->
+  <div class="logo">
+    <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="4" y="4" width="40" height="40" rx="10" fill="#6C63FF"/>
+      <polygon points="18,14 18,34 36,24" fill="white"/>
+    </svg>
+  </div>
+
+  <h1>UHVA Player</h1>
+  <p class="tagline">Professional IPTV Player for Android &amp; Android TV</p>
+
+  <div class="version-badge" id="versionBadge">v1.0.0</div>
+
+  <!-- Primary download: arm64 (most TV boxes + modern phones) -->
+  <a class="btn-primary" id="btnArm64" href="#" download>
+    ⬇ Download APK
+    <span class="btn-label">ARM 64-bit · Recommended for most Android TV boxes &amp; phones</span>
+  </a>
+
+  <!-- Other architectures -->
+  <a class="btn-secondary" id="btnUniversal" href="#" download>
+    Universal APK (all devices)
+    <span class="btn-label">Larger file — use if arm64 doesn't install</span>
+  </a>
+  <a class="btn-secondary" id="btnArm32" href="#" download>
+    ARM 32-bit APK
+    <span class="btn-label">Older Android devices &amp; some TV sticks</span>
+  </a>
+
+  <hr class="divider"/>
+
+  <!-- QR Code -->
+  <div class="qr-section">
+    <h3>Scan to download on TV</h3>
+    <div id="qrcode"></div>
+    <p class="qr-hint">Scan this QR with your phone, then open the link on your TV browser</p>
+  </div>
+
+  <hr class="divider"/>
+
+  <!-- TV install guide -->
+  <div class="install-steps">
+    <h3>Install on Android TV</h3>
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-text">Install <b>Downloader by AFTVnews</b> from the Google Play Store or App Store on your TV</div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-text">Open Downloader and enter this URL:<br/><b id="shortUrl" style="color:#6C63FF; word-break:break-all;"></b></div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-text">Tap <b>Go</b> — the APK downloads automatically</div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-text">Tap <b>Install</b> when prompted. Enable <b>Unknown Sources</b> in Settings if asked</div>
+    </div>
+  </div>
+
+</div>
+
+<p class="footer">Built by Thirdsan Enterprises Ltd · Kampala, Uganda</p>
+
+<!-- QR code library (vanilla JS, no external dependencies at runtime) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+  // ── Config ────────────────────────────────────────────────────────────────
+  const OWNER   = 'saviour26';
+  const REPO    = 'uhva-';
+  const VERSION = 'v1.0.0';
+  const BASE    = `https://github.com/${OWNER}/${REPO}/releases/download/${VERSION}`;
+
+  const URLS = {
+    arm64:     `${BASE}/app-arm64-v8a-release.apk`,
+    arm32:     `${BASE}/app-armeabi-v7a-release.apk`,
+    universal: `${BASE}/app-release.apk`,
+  };
+
+  // ── Wire up download buttons ──────────────────────────────────────────────
+  document.getElementById('versionBadge').textContent = VERSION;
+  document.getElementById('btnArm64').href            = URLS.arm64;
+  document.getElementById('btnUniversal').href        = URLS.universal;
+  document.getElementById('btnArm32').href            = URLS.arm32;
+  document.getElementById('shortUrl').textContent     = URLS.arm64;
+
+  // ── QR code (points to arm64 APK — best choice for TV boxes) ─────────────
+  new QRCode(document.getElementById('qrcode'), {
+    text:            URLS.arm64,
+    width:           160,
+    height:          160,
+    colorDark:       '#6C63FF',
+    colorLight:      '#0E0E24',
+    correctLevel:    QRCode.CorrectLevel.M,
+  });
+</script>
+
+</body>
+</html>

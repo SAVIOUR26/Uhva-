@@ -89,7 +89,7 @@ class _ParentalScreenState extends State<ParentalScreen> {
                       style:
                           const TextStyle(color: UhvaColors.onBackground)),
                   value: locked,
-                  activeThumbColor: UhvaColors.primary,
+                  activeColor: UhvaColors.primary,
                   secondary: Icon(
                     locked ? Icons.lock : Icons.lock_open_outlined,
                     color: locked

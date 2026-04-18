@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+
 import '../../providers/app_provider.dart';
 import '../../models/models.dart';
 import '../../theme/app_theme.dart';
@@ -14,6 +15,8 @@ import '../epg/epg_screen.dart';
 import '../search/search_screen.dart';
 import '../settings/settings_screen.dart';
 
+// ── Hub launcher (Star-IPTV style) ──────────────────────────────────────────
+
 class TvHomeScreen extends StatefulWidget {
   const TvHomeScreen({super.key});
 
@@ -22,354 +25,41 @@ class TvHomeScreen extends StatefulWidget {
 }
 
 class _TvHomeScreenState extends State<TvHomeScreen> {
-  int _navIndex = 0;
-  LiveChannel? _focusedChannel;
-  final _navItems = [
-    'Live TV', 'Movies', 'Series', 'Radio', 'Favourites',
-    'Guide', 'Search', 'Settings'
-  ];
-
-  Widget _buildContent(AppProvider provider) {
-    switch (_navIndex) {
-      case 0:
-        return _TvLiveContent(
-          provider: provider,
-          onFocus: (ch) => setState(() => _focusedChannel = ch),
-          onSelect: (ch) {
-            provider.addToHistory(ch);
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => PlayerScreen(channel: ch)),
-            );
-          },
-        );
-      case 1:
-        return const VodScreen();
-      case 2:
-        return const SeriesScreen();
-      case 3:
-        return const RadioScreen();
-      case 4:
-        return _TvFavourites(provider: provider);
-      default:
-        return const SizedBox();
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    final provider = context.watch<AppProvider>();
-
     return Scaffold(
-      body: Row(
-        children: [
-          // ── Side nav ───────────────────────────────────────────────────
-          _TvSideNav(
-            items: _navItems,
-            selectedIndex: _navIndex,
-            onSelect: (i) {
-              // Guide / Search / Settings are pushed as full routes
-              if (i == 5) {
-                Navigator.push(context,
-                    MaterialPageRoute(builder: (_) => const EpgScreen()));
-                return;
-              }
-              if (i == 6) {
-                Navigator.push(context,
-                    MaterialPageRoute(builder: (_) => const SearchScreen()));
-                return;
-              }
-              if (i == 7) {
-                Navigator.push(context,
-                    MaterialPageRoute(builder: (_) => const SettingsScreen()));
-                return;
-              }
-              setState(() => _navIndex = i);
-              if (i == 1) provider.loadVod();
-              if (i == 2) provider.loadSeries();
-              if (i == 3) provider.loadRadio();
-            },
-          ),
-          const VerticalDivider(width: 0),
-          // ── Content area ───────────────────────────────────────────────
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _TvTopBar(channel: _focusedChannel),
-                Expanded(
-                  child: _buildContent(provider),
-                ),
-              ],
-            ),
-          ),
-        ],
+      backgroundColor: UhvaColors.background,
+      body: SafeArea(
+        child: Column(
+          children: [
+            _TopBar(),
+            Expanded(child: _HubMenu()),
+          ],
+        ),
       ),
     );
   }
 }
 
-class _TvSideNav extends StatelessWidget {
-  final List<String> items;
-  final int selectedIndex;
-  final ValueChanged<int> onSelect;
-
-  const _TvSideNav({
-    required this.items,
-    required this.selectedIndex,
-    required this.onSelect,
-  });
-
-  IconData _icon(int i) {
-    const icons = [
-      Icons.live_tv,
-      Icons.movie_outlined,
-      Icons.video_library_outlined,
-      Icons.radio,
-      Icons.star_border,
-      Icons.grid_view_rounded,
-      Icons.search,
-      Icons.settings_outlined,
-    ];
-    return i < icons.length ? icons[i] : Icons.circle;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 220,
-      color: UhvaColors.surface,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 32, 20, 28),
-            child: UhvaLogo(size: 36, horizontal: true),
-          ),
-          ...List.generate(items.length, (i) {
-            final sel = i == selectedIndex;
-            return Focus(
-              onKeyEvent: (node, event) {
-                if (event is KeyDownEvent &&
-                    event.logicalKey == LogicalKeyboardKey.select) {
-                  onSelect(i);
-                  return KeyEventResult.handled;
-                }
-                return KeyEventResult.ignored;
-              },
-              child: GestureDetector(
-                onTap: () => onSelect(i),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 150),
-                  margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                  decoration: BoxDecoration(
-                    color: sel
-                        ? UhvaColors.primary.withValues(alpha: 0.2)
-                        : Colors.transparent,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border(
-                      left: BorderSide(
-                        color: sel ? UhvaColors.primary : Colors.transparent,
-                        width: 3,
-                      ),
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        _icon(i),
-                        size: 20,
-                        color: sel
-                            ? UhvaColors.primaryLight
-                            : UhvaColors.onSurfaceMuted,
-                      ),
-                      const SizedBox(width: 14),
-                      Text(
-                        items[i],
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: sel ? FontWeight.w600 : FontWeight.w400,
-                          color: sel
-                              ? UhvaColors.primaryLight
-                              : UhvaColors.onSurfaceMuted,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          }),
-        ],
-      ),
-    );
-  }
-}
-
-class _TvTopBar extends StatelessWidget {
-  final LiveChannel? channel;
-  const _TvTopBar({this.channel});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 64,
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: UhvaColors.divider)),
-      ),
-      child: Row(
-        children: [
-          if (channel != null) ...[
-            Container(
-              width: 8,
-              height: 8,
-              decoration: const BoxDecoration(
-                color: UhvaColors.liveRed,
-                shape: BoxShape.circle,
-              ),
-            ),
-            const SizedBox(width: 10),
-            Text(
-              'Now: ${channel!.name}',
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: UhvaColors.onBackground,
-              ),
-            ),
-            if (channel!.currentProgram != null) ...[
-              const Text(' — ',
-                  style: TextStyle(color: UhvaColors.onSurfaceHint)),
-              Text(
-                channel!.currentProgram!.title,
-                style: const TextStyle(
-                    fontSize: 13, color: UhvaColors.onSurfaceMuted),
-              ),
-            ],
-          ] else
-            const Text(
-              'What would you like to watch?',
-              style: TextStyle(
-                  fontSize: 15, color: UhvaColors.onSurfaceMuted),
-            ),
-          const Spacer(),
-          _ClockWidget(),
-        ],
-      ),
-    );
-  }
-}
-
-class _ClockWidget extends StatelessWidget {
+class _TopBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
     final time =
         '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
-    return Text(
-      time,
-      style: const TextStyle(
-        fontSize: 16,
-        fontWeight: FontWeight.w600,
-        color: UhvaColors.onSurfaceMuted,
-        fontFeatures: [FontFeature.tabularFigures()],
-      ),
-    );
-  }
-}
-
-class _TvLiveContent extends StatefulWidget {
-  final AppProvider provider;
-  final ValueChanged<LiveChannel> onFocus;
-  final ValueChanged<LiveChannel> onSelect;
-
-  const _TvLiveContent({
-    required this.provider,
-    required this.onFocus,
-    required this.onSelect,
-  });
-
-  @override
-  State<_TvLiveContent> createState() => _TvLiveContentState();
-}
-
-class _TvLiveContentState extends State<_TvLiveContent> {
-  String _catId = '';
-
-  @override
-  Widget build(BuildContext context) {
-    final channels = _catId.isEmpty
-        ? widget.provider.allChannels
-        : widget.provider.allChannels
-            .where((c) => c.categoryId == _catId)
-            .toList();
-
-    final recent = widget.provider.recentChannels;
-
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
+      child: Row(
         children: [
-          // Category pills
-          SizedBox(
-            height: 38,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              children: [
-                _TvPill(label: 'All', selected: _catId.isEmpty,
-                    onTap: () => setState(() => _catId = '')),
-                ...widget.provider.liveCategories.map((c) => _TvPill(
-                      label: c.categoryName,
-                      selected: _catId == c.categoryId,
-                      onTap: () =>
-                          setState(() => _catId = c.categoryId),
-                    )),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 24),
-
-          // Continue watching
-          if (recent.isNotEmpty) ...[
-            _SectionHeader(title: 'Continue watching'),
-            const SizedBox(height: 12),
-            SizedBox(
-              height: 110,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                itemCount: recent.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 12),
-                itemBuilder: (_, i) => _TvChannelCard(
-                  channel: recent[i],
-                  onFocus: widget.onFocus,
-                  onSelect: widget.onSelect,
-                ),
-              ),
-            ),
-            const SizedBox(height: 28),
-          ],
-
-          // All channels
-          _SectionHeader(title: _catId.isEmpty ? 'All channels' : ''),
-          const SizedBox(height: 12),
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 6,
-              childAspectRatio: 1.4,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
-            ),
-            itemCount: channels.length,
-            itemBuilder: (_, i) => _TvChannelCard(
-              channel: channels[i],
-              onFocus: widget.onFocus,
-              onSelect: widget.onSelect,
+          UhvaLogo(size: 32, horizontal: true),
+          const Spacer(),
+          Text(
+            time,
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: UhvaColors.onSurfaceMuted,
+              fontFeatures: [FontFeature.tabularFigures()],
             ),
           ),
         ],
@@ -378,16 +68,384 @@ class _TvLiveContentState extends State<_TvLiveContent> {
   }
 }
 
-class _TvChannelCard extends StatefulWidget {
-  final LiveChannel channel;
-  final ValueChanged<LiveChannel> onFocus;
-  final ValueChanged<LiveChannel> onSelect;
+class _HubMenu extends StatelessWidget {
+  void _go(BuildContext context, Widget screen) {
+    Navigator.push(context, MaterialPageRoute(builder: (_) => screen));
+  }
 
-  const _TvChannelCard({
-    required this.channel,
-    required this.onFocus,
+  @override
+  Widget build(BuildContext context) {
+    return FocusTraversalGroup(
+      policy: OrderedTraversalPolicy(),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // ── Main row ────────────────────────────────────────────────
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _HubButton(
+                  order: 1,
+                  icon: Icons.live_tv_rounded,
+                  label: 'Live TV',
+                  size: 148,
+                  iconSize: 52,
+                  color: const Color(0xFFE53935),
+                  onSelect: () => _go(context, const _TvLiveScreen()),
+                ),
+                const SizedBox(width: 32),
+                _HubButton(
+                  order: 2,
+                  icon: Icons.movie_rounded,
+                  label: 'VOD',
+                  size: 148,
+                  iconSize: 52,
+                  color: const Color(0xFF6C63FF),
+                  onSelect: () {
+                    context.read<AppProvider>().loadVod();
+                    _go(context, const VodScreen());
+                  },
+                ),
+                const SizedBox(width: 32),
+                _HubButton(
+                  order: 3,
+                  icon: Icons.video_library_rounded,
+                  label: 'Series',
+                  size: 148,
+                  iconSize: 52,
+                  color: const Color(0xFF2196F3),
+                  onSelect: () {
+                    context.read<AppProvider>().loadSeries();
+                    _go(context, const SeriesScreen());
+                  },
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 36),
+
+            // ── Sub row ─────────────────────────────────────────────────
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _HubButton(
+                  order: 4,
+                  icon: Icons.history_rounded,
+                  label: 'Catch Up',
+                  size: 96,
+                  iconSize: 32,
+                  color: const Color(0xFF4CAF50),
+                  onSelect: () => _go(context, const EpgScreen()),
+                ),
+                const SizedBox(width: 28),
+                _HubButton(
+                  order: 5,
+                  icon: Icons.radio_rounded,
+                  label: 'Radio',
+                  size: 96,
+                  iconSize: 32,
+                  color: const Color(0xFFFF9800),
+                  onSelect: () {
+                    context.read<AppProvider>().loadRadio();
+                    _go(context, const RadioScreen());
+                  },
+                ),
+                const SizedBox(width: 28),
+                _HubButton(
+                  order: 6,
+                  icon: Icons.search_rounded,
+                  label: 'Search',
+                  size: 96,
+                  iconSize: 32,
+                  color: const Color(0xFF9C27B0),
+                  onSelect: () => _go(context, const SearchScreen()),
+                ),
+                const SizedBox(width: 28),
+                _HubButton(
+                  order: 7,
+                  icon: Icons.settings_rounded,
+                  label: 'Settings',
+                  size: 96,
+                  iconSize: 32,
+                  color: const Color(0xFF607D8B),
+                  onSelect: () => _go(context, const SettingsScreen()),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Single circular hub button ───────────────────────────────────────────────
+
+class _HubButton extends StatefulWidget {
+  final int order;
+  final IconData icon;
+  final String label;
+  final double size;
+  final double iconSize;
+  final Color color;
+  final VoidCallback onSelect;
+
+  const _HubButton({
+    required this.order,
+    required this.icon,
+    required this.label,
+    required this.size,
+    required this.iconSize,
+    required this.color,
     required this.onSelect,
   });
+
+  @override
+  State<_HubButton> createState() => _HubButtonState();
+}
+
+class _HubButtonState extends State<_HubButton>
+    with SingleTickerProviderStateMixin {
+  bool _focused = false;
+  late final AnimationController _ctrl;
+  late final Animation<double> _scale;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 140));
+    _scale = Tween<double>(begin: 1.0, end: 1.10)
+        .animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  void _onFocus(bool f) {
+    setState(() => _focused = f);
+    if (f) {
+      _ctrl.forward();
+    } else {
+      _ctrl.reverse();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FocusTraversalOrder(
+      order: NumericFocusOrder(widget.order.toDouble()),
+      child: Focus(
+        onFocusChange: _onFocus,
+        onKeyEvent: (_, event) {
+          if (event is KeyDownEvent &&
+              event.logicalKey == LogicalKeyboardKey.select) {
+            widget.onSelect();
+            return KeyEventResult.handled;
+          }
+          return KeyEventResult.ignored;
+        },
+        child: GestureDetector(
+          onTap: widget.onSelect,
+          child: ScaleTransition(
+            scale: _scale,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 150),
+                  width: widget.size,
+                  height: widget.size,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: _focused
+                        ? widget.color.withValues(alpha: 0.25)
+                        : UhvaColors.card,
+                    border: Border.all(
+                      color: _focused ? widget.color : UhvaColors.divider,
+                      width: _focused ? 3 : 1.5,
+                    ),
+                    boxShadow: _focused
+                        ? [
+                            BoxShadow(
+                              color: widget.color.withValues(alpha: 0.45),
+                              blurRadius: 28,
+                              spreadRadius: 2,
+                            )
+                          ]
+                        : [],
+                  ),
+                  child: Icon(
+                    widget.icon,
+                    size: widget.iconSize,
+                    color: _focused ? widget.color : UhvaColors.onSurfaceMuted,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  widget.label,
+                  style: TextStyle(
+                    fontSize: widget.size >= 130 ? 15 : 12,
+                    fontWeight:
+                        _focused ? FontWeight.w700 : FontWeight.w400,
+                    color: _focused ? Colors.white : UhvaColors.onSurfaceMuted,
+                    letterSpacing: 0.3,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Full-screen Live TV (pushed from hub) ────────────────────────────────────
+
+class _TvLiveScreen extends StatefulWidget {
+  const _TvLiveScreen();
+
+  @override
+  State<_TvLiveScreen> createState() => _TvLiveScreenState();
+}
+
+class _TvLiveScreenState extends State<_TvLiveScreen> {
+  String _catId = '';
+
+  @override
+  Widget build(BuildContext context) {
+    final provider = context.watch<AppProvider>();
+    final channels = _catId.isEmpty
+        ? provider.allChannels
+        : provider.allChannels.where((c) => c.categoryId == _catId).toList();
+    final recent = provider.recentChannels;
+
+    return Scaffold(
+      backgroundColor: UhvaColors.background,
+      body: Column(
+        children: [
+          // ── Top bar with back ──────────────────────────────────────
+          Container(
+            height: 64,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            decoration: const BoxDecoration(
+              border: Border(bottom: BorderSide(color: UhvaColors.divider)),
+            ),
+            child: Row(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.arrow_back_ios_new,
+                      color: Colors.white70, size: 20),
+                  onPressed: () => Navigator.pop(context),
+                ),
+                const SizedBox(width: 8),
+                const Icon(Icons.live_tv_rounded,
+                    color: UhvaColors.liveRed, size: 20),
+                const SizedBox(width: 10),
+                const Text(
+                  'Live TV',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
+                const Spacer(),
+                // Category pills
+                SizedBox(
+                  height: 36,
+                  child: ListView(
+                    scrollDirection: Axis.horizontal,
+                    shrinkWrap: true,
+                    children: [
+                      _TvPill(
+                          label: 'All',
+                          selected: _catId.isEmpty,
+                          onTap: () => setState(() => _catId = '')),
+                      ...provider.liveCategories.map((c) => _TvPill(
+                            label: c.categoryName,
+                            selected: _catId == c.categoryId,
+                            onTap: () =>
+                                setState(() => _catId = c.categoryId),
+                          )),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // ── Channel grid ──────────────────────────────────────────────
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (recent.isNotEmpty) ...[
+                    _SectionHeader(title: 'Continue watching'),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      height: 110,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: recent.length,
+                        separatorBuilder: (_, __) => const SizedBox(width: 12),
+                        itemBuilder: (_, i) => _TvChannelCard(
+                          channel: recent[i],
+                          onSelect: _play,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 28),
+                  ],
+                  _SectionHeader(
+                      title: _catId.isEmpty ? 'All channels' : ''),
+                  const SizedBox(height: 12),
+                  GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 6,
+                      childAspectRatio: 1.4,
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 12,
+                    ),
+                    itemCount: channels.length,
+                    itemBuilder: (_, i) => _TvChannelCard(
+                      channel: channels[i],
+                      onSelect: _play,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _play(LiveChannel ch) {
+    context.read<AppProvider>().addToHistory(ch);
+    Navigator.push(
+        context, MaterialPageRoute(builder: (_) => PlayerScreen(channel: ch)));
+  }
+}
+
+// ── Shared channel card ──────────────────────────────────────────────────────
+
+class _TvChannelCard extends StatefulWidget {
+  final LiveChannel channel;
+  final ValueChanged<LiveChannel> onSelect;
+
+  const _TvChannelCard({required this.channel, required this.onSelect});
 
   @override
   State<_TvChannelCard> createState() => _TvChannelCardState();
@@ -399,10 +457,7 @@ class _TvChannelCardState extends State<_TvChannelCard> {
   @override
   Widget build(BuildContext context) {
     return Focus(
-      onFocusChange: (f) {
-        setState(() => _focused = f);
-        if (f) widget.onFocus(widget.channel);
-      },
+      onFocusChange: (f) => setState(() => _focused = f),
       onKeyEvent: (_, event) {
         if (event is KeyDownEvent &&
             event.logicalKey == LogicalKeyboardKey.select) {
@@ -430,8 +485,7 @@ class _TvChannelCardState extends State<_TvChannelCard> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               _ChannelLogoTv(
-                  url: widget.channel.streamIcon,
-                  name: widget.channel.name),
+                  url: widget.channel.streamIcon, name: widget.channel.name),
               const SizedBox(height: 6),
               Text(
                 widget.channel.name,
@@ -506,7 +560,8 @@ class _TvPill extends StatelessWidget {
   final String label;
   final bool selected;
   final VoidCallback onTap;
-  const _TvPill({required this.label, required this.selected, required this.onTap});
+  const _TvPill(
+      {required this.label, required this.selected, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -515,7 +570,7 @@ class _TvPill extends StatelessWidget {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
         margin: const EdgeInsets.only(right: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
         decoration: BoxDecoration(
           color: selected ? UhvaColors.primary : UhvaColors.surfaceAlt,
           borderRadius: BorderRadius.circular(20),
@@ -533,55 +588,13 @@ class _TvPill extends StatelessWidget {
   }
 }
 
-class _TvFavourites extends StatelessWidget {
-  final AppProvider provider;
-  const _TvFavourites({required this.provider});
-
-  @override
-  Widget build(BuildContext context) {
-    final favs = provider.favouriteChannels;
-    if (favs.isEmpty) {
-      return const Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.star_border, size: 56, color: UhvaColors.onSurfaceHint),
-            SizedBox(height: 16),
-            Text('No favourites yet',
-                style:
-                    TextStyle(color: UhvaColors.onSurfaceMuted, fontSize: 16)),
-          ],
-        ),
-      );
-    }
-    return GridView.builder(
-      padding: const EdgeInsets.all(24),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 6,
-        childAspectRatio: 1.4,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
-      ),
-      itemCount: favs.length,
-      itemBuilder: (ctx, i) => _TvChannelCard(
-        channel: favs[i],
-        onFocus: (_) {},
-        onSelect: (ch) {
-          provider.addToHistory(ch);
-          Navigator.push(ctx,
-              MaterialPageRoute(builder: (_) => PlayerScreen(channel: ch)));
-        },
-      ),
-    );
-  }
-}
-
 class _SectionHeader extends StatelessWidget {
   final String title;
   const _SectionHeader({required this.title});
 
   @override
   Widget build(BuildContext context) {
+    if (title.isEmpty) return const SizedBox.shrink();
     return Text(
       title,
       style: const TextStyle(

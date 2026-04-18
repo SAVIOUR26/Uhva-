@@ -158,8 +158,12 @@ class XtreamService {
   }
 
   // ─── URL helpers ─────────────────────────────────────────────────────────
-  String streamUrl(int streamId, {String ext = 'm3u8'}) =>
-      '$_serverUrl/live/$_username/$_password/$streamId.$ext';
+  // Use directSource from the API if present — it overrides the constructed URL.
+  // Falls back to constructed m3u8, and callers may retry with ext='ts'.
+  String streamUrl(int streamId, {String ext = 'm3u8', String directSource = ''}) {
+    if (directSource.isNotEmpty) return directSource;
+    return '$_serverUrl/live/$_username/$_password/$streamId.$ext';
+  }
 
   String vodUrl(int streamId, String ext) =>
       '$_serverUrl/movie/$_username/$_password/$streamId.$ext';

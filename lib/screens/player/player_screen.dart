@@ -27,6 +27,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
   bool _isBuffering = false;
   bool _hasError = false;
   String _errorMessage = '';
+  bool _triedTsFallback = false;
 
   late LiveChannel _channel;
   List<EpgEntry> _epg = [];
@@ -47,12 +48,19 @@ class _PlayerScreenState extends State<PlayerScreen> {
       if (mounted) setState(() => _isBuffering = buffering);
     });
     _player.stream.error.listen((error) {
-      if (mounted && error.isNotEmpty) {
-        setState(() {
-          _hasError = true;
-          _errorMessage = _friendlyError(error);
-        });
+      if (!mounted || error.isEmpty) return;
+      // Auto-retry once with .ts before showing the error screen
+      if (!_triedTsFallback && _channel.directSource.isEmpty) {
+        _triedTsFallback = true;
+        final url = context.read<AppProvider>()
+            .streamUrl(_channel.streamId, ext: 'ts');
+        _player.open(Media(url));
+        return;
       }
+      setState(() {
+        _hasError = true;
+        _errorMessage = _friendlyError(error);
+      });
     });
     _initStream();
     _loadEpg();
@@ -60,7 +68,9 @@ class _PlayerScreenState extends State<PlayerScreen> {
   }
 
   void _initStream() {
-    final url = context.read<AppProvider>().streamUrl(_channel.streamId);
+    _triedTsFallback = false;
+    final url = context.read<AppProvider>()
+        .streamUrl(_channel.streamId, directSource: _channel.directSource);
     _player.open(Media(url));
     setState(() { _hasError = false; _errorMessage = ''; });
   }

@@ -282,7 +282,8 @@ class AppProvider extends ChangeNotifier {
   }
 
   // ─── URL helpers ─────────────────────────────────────────────────────────
-  String streamUrl(int streamId) => _xtream.streamUrl(streamId);
+  String streamUrl(int streamId, {String ext = 'm3u8', String directSource = ''}) =>
+      _xtream.streamUrl(streamId, ext: ext, directSource: directSource);
   String vodUrl(int streamId, String ext) => _xtream.vodUrl(streamId, ext);
   String seriesEpisodeUrl(String episodeId, String ext) =>
       _xtream.seriesEpisodeUrl(episodeId, ext);

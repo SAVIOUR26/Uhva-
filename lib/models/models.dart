@@ -62,6 +62,7 @@ class LiveChannel {
   final bool tvArchive;
   final int tvArchiveDuration;
   final String customSid;
+  final String directSource;
 
   bool isFavourite;
   EpgEntry? currentProgram;
@@ -77,6 +78,7 @@ class LiveChannel {
     required this.tvArchive,
     required this.tvArchiveDuration,
     required this.customSid,
+    this.directSource = '',
     this.isFavourite = false,
     this.currentProgram,
     this.nextProgram,
@@ -92,6 +94,7 @@ class LiveChannel {
         tvArchive: (json['tv_archive'] == 1 || json['tv_archive'] == '1'),
         tvArchiveDuration: int.tryParse(json['tv_archive_duration']?.toString() ?? '0') ?? 0,
         customSid: json['custom_sid'] ?? '',
+        directSource: json['direct_source']?.toString() ?? '',
       );
 
   String streamUrl(String serverUrl, String username, String password, {String ext = 'm3u8'}) =>

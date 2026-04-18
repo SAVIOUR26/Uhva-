@@ -68,113 +68,161 @@ class _TopBar extends StatelessWidget {
   }
 }
 
-class _HubMenu extends StatelessWidget {
-  void _go(BuildContext context, Widget screen) {
+// ── Hub menu with explicit D-pad focus management ────────────────────────────
+
+class _HubMenu extends StatefulWidget {
+  const _HubMenu();
+
+  @override
+  State<_HubMenu> createState() => _HubMenuState();
+}
+
+class _HubMenuState extends State<_HubMenu> {
+  // Row 0: Live TV(0), Movies(1), Series(2)
+  // Row 1: Catch Up(3), Radio(4), Search(5), Settings(6)
+  late final List<FocusNode> _nodes;
+
+  @override
+  void initState() {
+    super.initState();
+    _nodes = List.generate(7, (_) => FocusNode());
+    // Auto-focus Live TV when hub loads
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _nodes[0].requestFocus();
+    });
+  }
+
+  @override
+  void dispose() {
+    for (final n in _nodes) n.dispose();
+    super.dispose();
+  }
+
+  void _go(Widget screen) {
     Navigator.push(context, MaterialPageRoute(builder: (_) => screen));
   }
 
   @override
   Widget build(BuildContext context) {
-    return FocusTraversalGroup(
-      policy: OrderedTraversalPolicy(),
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // ── Main row ────────────────────────────────────────────────
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _HubButton(
-                  order: 1,
-                  icon: Icons.live_tv_rounded,
-                  label: 'Live TV',
-                  size: 148,
-                  iconSize: 52,
-                  color: const Color(0xFFE53935),
-                  onSelect: () => _go(context, const _TvLiveScreen()),
-                ),
-                const SizedBox(width: 32),
-                _HubButton(
-                  order: 2,
-                  icon: Icons.movie_rounded,
-                  label: 'VOD',
-                  size: 148,
-                  iconSize: 52,
-                  color: const Color(0xFF6C63FF),
-                  onSelect: () {
-                    context.read<AppProvider>().loadVod();
-                    _go(context, const VodScreen());
-                  },
-                ),
-                const SizedBox(width: 32),
-                _HubButton(
-                  order: 3,
-                  icon: Icons.video_library_rounded,
-                  label: 'Series',
-                  size: 148,
-                  iconSize: 52,
-                  color: const Color(0xFF2196F3),
-                  onSelect: () {
-                    context.read<AppProvider>().loadSeries();
-                    _go(context, const SeriesScreen());
-                  },
-                ),
-              ],
-            ),
+    // Neighbour map: each entry = [left, right, up, down] node index (-1 = none)
+    const nav = [
+      // idx  left  right  up   down
+      /* 0  */ [2,    1,    -1,   3],  // Live TV
+      /* 1  */ [0,    2,    -1,   4],  // Movies
+      /* 2  */ [1,    0,    -1,   5],  // Series
+      /* 3  */ [6,    4,     0,  -1],  // Catch Up
+      /* 4  */ [3,    5,     1,  -1],  // Radio
+      /* 5  */ [4,    6,     2,  -1],  // Search
+      /* 6  */ [5,    3,     2,  -1],  // Settings
+    ];
 
-            const SizedBox(height: 36),
+    void onKey(int idx, LogicalKeyboardKey key) {
+      final map = nav[idx];
+      int target = -1;
+      if (key == LogicalKeyboardKey.arrowLeft)  target = map[0];
+      if (key == LogicalKeyboardKey.arrowRight) target = map[1];
+      if (key == LogicalKeyboardKey.arrowUp)    target = map[2];
+      if (key == LogicalKeyboardKey.arrowDown)  target = map[3];
+      if (target >= 0) _nodes[target].requestFocus();
+    }
 
-            // ── Sub row ─────────────────────────────────────────────────
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _HubButton(
-                  order: 4,
-                  icon: Icons.history_rounded,
-                  label: 'Catch Up',
-                  size: 96,
-                  iconSize: 32,
-                  color: const Color(0xFF4CAF50),
-                  onSelect: () => _go(context, const EpgScreen()),
-                ),
-                const SizedBox(width: 28),
-                _HubButton(
-                  order: 5,
-                  icon: Icons.radio_rounded,
-                  label: 'Radio',
-                  size: 96,
-                  iconSize: 32,
-                  color: const Color(0xFFFF9800),
-                  onSelect: () {
-                    context.read<AppProvider>().loadRadio();
-                    _go(context, const RadioScreen());
-                  },
-                ),
-                const SizedBox(width: 28),
-                _HubButton(
-                  order: 6,
-                  icon: Icons.search_rounded,
-                  label: 'Search',
-                  size: 96,
-                  iconSize: 32,
-                  color: const Color(0xFF9C27B0),
-                  onSelect: () => _go(context, const SearchScreen()),
-                ),
-                const SizedBox(width: 28),
-                _HubButton(
-                  order: 7,
-                  icon: Icons.settings_rounded,
-                  label: 'Settings',
-                  size: 96,
-                  iconSize: 32,
-                  color: const Color(0xFF607D8B),
-                  onSelect: () => _go(context, const SettingsScreen()),
-                ),
-              ],
-            ),
-          ],
-        ),
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // ── Main row ──────────────────────────────────────────────────
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _HubButton(
+                focusNode: _nodes[0],
+                icon: Icons.live_tv_rounded,
+                label: 'Live TV',
+                size: 148, iconSize: 52,
+                color: const Color(0xFFE53935),
+                onKey: (k) => onKey(0, k),
+                onSelect: () => _go(const _TvLiveScreen()),
+              ),
+              const SizedBox(width: 32),
+              _HubButton(
+                focusNode: _nodes[1],
+                icon: Icons.movie_rounded,
+                label: 'VOD',
+                size: 148, iconSize: 52,
+                color: const Color(0xFF6C63FF),
+                onKey: (k) => onKey(1, k),
+                onSelect: () {
+                  context.read<AppProvider>().loadVod();
+                  _go(const VodScreen());
+                },
+              ),
+              const SizedBox(width: 32),
+              _HubButton(
+                focusNode: _nodes[2],
+                icon: Icons.video_library_rounded,
+                label: 'Series',
+                size: 148, iconSize: 52,
+                color: const Color(0xFF2196F3),
+                onKey: (k) => onKey(2, k),
+                onSelect: () {
+                  context.read<AppProvider>().loadSeries();
+                  _go(const SeriesScreen());
+                },
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 36),
+
+          // ── Sub row ───────────────────────────────────────────────────
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _HubButton(
+                focusNode: _nodes[3],
+                icon: Icons.history_rounded,
+                label: 'Catch Up',
+                size: 96, iconSize: 32,
+                color: const Color(0xFF4CAF50),
+                onKey: (k) => onKey(3, k),
+                onSelect: () => _go(const EpgScreen()),
+              ),
+              const SizedBox(width: 28),
+              _HubButton(
+                focusNode: _nodes[4],
+                icon: Icons.radio_rounded,
+                label: 'Radio',
+                size: 96, iconSize: 32,
+                color: const Color(0xFFFF9800),
+                onKey: (k) => onKey(4, k),
+                onSelect: () {
+                  context.read<AppProvider>().loadRadio();
+                  _go(const RadioScreen());
+                },
+              ),
+              const SizedBox(width: 28),
+              _HubButton(
+                focusNode: _nodes[5],
+                icon: Icons.search_rounded,
+                label: 'Search',
+                size: 96, iconSize: 32,
+                color: const Color(0xFF9C27B0),
+                onKey: (k) => onKey(5, k),
+                onSelect: () => _go(const SearchScreen()),
+              ),
+              const SizedBox(width: 28),
+              _HubButton(
+                focusNode: _nodes[6],
+                icon: Icons.settings_rounded,
+                label: 'Settings',
+                size: 96, iconSize: 32,
+                color: const Color(0xFF607D8B),
+                onKey: (k) => onKey(6, k),
+                onSelect: () => _go(const SettingsScreen()),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -183,21 +231,23 @@ class _HubMenu extends StatelessWidget {
 // ── Single circular hub button ───────────────────────────────────────────────
 
 class _HubButton extends StatefulWidget {
-  final int order;
+  final FocusNode focusNode;
   final IconData icon;
   final String label;
   final double size;
   final double iconSize;
   final Color color;
+  final void Function(LogicalKeyboardKey) onKey;
   final VoidCallback onSelect;
 
   const _HubButton({
-    required this.order,
+    required this.focusNode,
     required this.icon,
     required this.label,
     required this.size,
     required this.iconSize,
     required this.color,
+    required this.onKey,
     required this.onSelect,
   });
 
@@ -237,18 +287,26 @@ class _HubButtonState extends State<_HubButton>
 
   @override
   Widget build(BuildContext context) {
-    return FocusTraversalOrder(
-      order: NumericFocusOrder(widget.order.toDouble()),
-      child: Focus(
-        onFocusChange: _onFocus,
-        onKeyEvent: (_, event) {
-          if (event is KeyDownEvent &&
-              event.logicalKey == LogicalKeyboardKey.select) {
-            widget.onSelect();
-            return KeyEventResult.handled;
-          }
-          return KeyEventResult.ignored;
-        },
+    return Focus(
+      focusNode: widget.focusNode,
+      onFocusChange: _onFocus,
+      onKeyEvent: (_, event) {
+        if (event is! KeyDownEvent) return KeyEventResult.ignored;
+        if (event.logicalKey == LogicalKeyboardKey.select ||
+            event.logicalKey == LogicalKeyboardKey.enter) {
+          widget.onSelect();
+          return KeyEventResult.handled;
+        }
+        final arrows = {
+          LogicalKeyboardKey.arrowLeft, LogicalKeyboardKey.arrowRight,
+          LogicalKeyboardKey.arrowUp,   LogicalKeyboardKey.arrowDown,
+        };
+        if (arrows.contains(event.logicalKey)) {
+          widget.onKey(event.logicalKey);
+          return KeyEventResult.handled;
+        }
+        return KeyEventResult.ignored;
+      },
         child: GestureDetector(
           onTap: widget.onSelect,
           child: ScaleTransition(

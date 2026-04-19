@@ -5,9 +5,7 @@ import 'package:provider/provider.dart';
 import 'providers/app_provider.dart';
 import 'theme/app_theme.dart';
 import 'screens/auth/login_screen.dart';
-import 'screens/home/home_screen.dart';
 import 'screens/home/tv_home_screen.dart';
-import 'utils/platform_utils.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

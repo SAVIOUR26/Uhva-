@@ -126,6 +126,15 @@ class _HubMenuState extends State<_HubMenu> {
       if (target >= 0) _nodes[target].requestFocus();
     }
 
+    final isPhone = MediaQuery.of(context).size.shortestSide < 600;
+    final mainSize  = isPhone ? 100.0 : 148.0;
+    final mainIcon  = isPhone ? 36.0  : 52.0;
+    final subSize   = isPhone ? 70.0  : 96.0;
+    final subIcon   = isPhone ? 24.0  : 32.0;
+    final mainGap   = isPhone ? 20.0  : 32.0;
+    final subGap    = isPhone ? 16.0  : 28.0;
+    final rowGap    = isPhone ? 24.0  : 36.0;
+
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -138,17 +147,17 @@ class _HubMenuState extends State<_HubMenu> {
                 focusNode: _nodes[0],
                 icon: Icons.live_tv_rounded,
                 label: 'Live TV',
-                size: 148, iconSize: 52,
+                size: mainSize, iconSize: mainIcon,
                 color: const Color(0xFFE53935),
                 onKey: (k) => onKey(0, k),
                 onSelect: () => _go(const _TvLiveScreen()),
               ),
-              const SizedBox(width: 32),
+              SizedBox(width: mainGap),
               _HubButton(
                 focusNode: _nodes[1],
                 icon: Icons.movie_rounded,
                 label: 'VOD',
-                size: 148, iconSize: 52,
+                size: mainSize, iconSize: mainIcon,
                 color: const Color(0xFF6C63FF),
                 onKey: (k) => onKey(1, k),
                 onSelect: () {
@@ -156,12 +165,12 @@ class _HubMenuState extends State<_HubMenu> {
                   _go(const VodScreen());
                 },
               ),
-              const SizedBox(width: 32),
+              SizedBox(width: mainGap),
               _HubButton(
                 focusNode: _nodes[2],
                 icon: Icons.video_library_rounded,
                 label: 'Series',
-                size: 148, iconSize: 52,
+                size: mainSize, iconSize: mainIcon,
                 color: const Color(0xFF2196F3),
                 onKey: (k) => onKey(2, k),
                 onSelect: () {
@@ -172,7 +181,7 @@ class _HubMenuState extends State<_HubMenu> {
             ],
           ),
 
-          const SizedBox(height: 36),
+          SizedBox(height: rowGap),
 
           // ── Sub row ───────────────────────────────────────────────────
           Row(
@@ -182,17 +191,17 @@ class _HubMenuState extends State<_HubMenu> {
                 focusNode: _nodes[3],
                 icon: Icons.history_rounded,
                 label: 'Catch Up',
-                size: 96, iconSize: 32,
+                size: subSize, iconSize: subIcon,
                 color: const Color(0xFF4CAF50),
                 onKey: (k) => onKey(3, k),
                 onSelect: () => _go(const EpgScreen()),
               ),
-              const SizedBox(width: 28),
+              SizedBox(width: subGap),
               _HubButton(
                 focusNode: _nodes[4],
                 icon: Icons.radio_rounded,
                 label: 'Radio',
-                size: 96, iconSize: 32,
+                size: subSize, iconSize: subIcon,
                 color: const Color(0xFFFF9800),
                 onKey: (k) => onKey(4, k),
                 onSelect: () {
@@ -200,22 +209,22 @@ class _HubMenuState extends State<_HubMenu> {
                   _go(const RadioScreen());
                 },
               ),
-              const SizedBox(width: 28),
+              SizedBox(width: subGap),
               _HubButton(
                 focusNode: _nodes[5],
                 icon: Icons.search_rounded,
                 label: 'Search',
-                size: 96, iconSize: 32,
+                size: subSize, iconSize: subIcon,
                 color: const Color(0xFF9C27B0),
                 onKey: (k) => onKey(5, k),
                 onSelect: () => _go(const SearchScreen()),
               ),
-              const SizedBox(width: 28),
+              SizedBox(width: subGap),
               _HubButton(
                 focusNode: _nodes[6],
                 icon: Icons.settings_rounded,
                 label: 'Settings',
-                size: 96, iconSize: 32,
+                size: subSize, iconSize: subIcon,
                 color: const Color(0xFF607D8B),
                 onKey: (k) => onKey(6, k),
                 onSelect: () => _go(const SettingsScreen()),
@@ -358,7 +367,6 @@ class _HubButtonState extends State<_HubButton>
             ),
           ),
         ),
-      ),
     );
   }
 }
@@ -468,9 +476,12 @@ class _TvLiveScreenState extends State<_TvLiveScreen> {
                   GridView.builder(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 6,
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: MediaQuery.of(context).size.width < 600
+                          ? 2
+                          : MediaQuery.of(context).size.width < 900
+                              ? 4
+                              : 6,
                       childAspectRatio: 1.4,
                       crossAxisSpacing: 12,
                       mainAxisSpacing: 12,

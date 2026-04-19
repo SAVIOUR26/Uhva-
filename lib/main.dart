@@ -47,7 +47,8 @@ class _RootRouter extends StatelessWidget {
       return const LoginScreen();
     }
 
-    final isTV = PlatformUtils.isTVScreen(context);
-    return isTV ? const TvHomeScreen() : const HomeScreen();
+    // Hub menu shown on all devices — phone and TV alike.
+    // Content screens inside the hub adapt their layout to screen size.
+    return const TvHomeScreen();
   }
 }

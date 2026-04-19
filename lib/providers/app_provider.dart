@@ -180,6 +180,7 @@ class AppProvider extends ChangeNotifier {
     }
     _liveCategories = cats;
     _allChannels = channels;
+    notifyListeners();
   }
 
   Future<void> loadVod() async {

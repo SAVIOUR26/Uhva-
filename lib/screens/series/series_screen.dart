@@ -30,48 +30,48 @@ class _SeriesScreenState extends State<SeriesScreen> {
   Widget build(BuildContext context) {
     final provider = context.watch<AppProvider>();
 
-    if (provider.series.isEmpty) {
-      return const Center(
-        child: CircularProgressIndicator(color: UhvaColors.primary),
-      );
-    }
-
+    final isLoading = provider.series.isEmpty;
     final items = _selectedCat.isEmpty
         ? provider.series
         : provider.series
             .where((s) => s.categoryId == _selectedCat)
             .toList();
 
-    return Column(
-      children: [
-        const SizedBox(height: 10),
-        CategoryBar(
-          categories: provider.seriesCategories,
-          selectedId: _selectedCat,
-          onSelect: (id) => setState(() => _selectedCat = id),
-        ),
-        const SizedBox(height: 8),
-        Expanded(
-          child: GridView.builder(
-            padding: const EdgeInsets.all(12),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 3,
-              childAspectRatio: 2 / 3,
-              crossAxisSpacing: 10,
-              mainAxisSpacing: 10,
-            ),
-            itemCount: items.length,
-            itemBuilder: (_, i) => _SeriesCard(
-              series: items[i],
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (_) => SeriesDetailScreen(series: items[i])),
-              ),
-            ),
+    return Scaffold(
+      backgroundColor: UhvaColors.background,
+      appBar: AppBar(
+        backgroundColor: UhvaColors.surface,
+        title: const Text('Series', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+        leading: const BackButton(color: Colors.white70),
+        bottom: isLoading ? null : PreferredSize(
+          preferredSize: const Size.fromHeight(48),
+          child: CategoryBar(
+            categories: provider.seriesCategories,
+            selectedId: _selectedCat,
+            onSelect: (id) => setState(() => _selectedCat = id),
           ),
         ),
-      ],
+      ),
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator(color: UhvaColors.primary))
+          : GridView.builder(
+              padding: const EdgeInsets.all(12),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 3,
+                childAspectRatio: 2 / 3,
+                crossAxisSpacing: 10,
+                mainAxisSpacing: 10,
+              ),
+              itemCount: items.length,
+              itemBuilder: (_, i) => _SeriesCard(
+                series: items[i],
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => SeriesDetailScreen(series: items[i])),
+                ),
+              ),
+            ),
     );
   }
 }

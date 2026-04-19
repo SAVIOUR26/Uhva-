@@ -358,7 +358,6 @@ class _HubButtonState extends State<_HubButton>
             ),
           ),
         ),
-      ),
     );
   }
 }

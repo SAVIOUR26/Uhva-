@@ -529,7 +529,8 @@ class _TvChannelCardState extends State<_TvChannelCard> {
       onFocusChange: (f) => setState(() => _focused = f),
       onKeyEvent: (_, event) {
         if (event is KeyDownEvent &&
-            event.logicalKey == LogicalKeyboardKey.select) {
+            (event.logicalKey == LogicalKeyboardKey.select ||
+             event.logicalKey == LogicalKeyboardKey.enter)) {
           widget.onSelect(widget.channel);
           return KeyEventResult.handled;
         }

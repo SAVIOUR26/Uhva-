@@ -76,11 +76,39 @@ class _VodPlayerScreenState extends State<VodPlayerScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      body: Stack(
-        children: [
-          SizedBox.expand(
-            child: Video(controller: _videoController),
-          ),
+      body: Focus(
+        autofocus: true,
+        onKeyEvent: (_, event) {
+          if (event is! KeyDownEvent) return KeyEventResult.ignored;
+          final key = event.logicalKey;
+          if (key == LogicalKeyboardKey.goBack ||
+              key == LogicalKeyboardKey.escape ||
+              key == LogicalKeyboardKey.browserBack) {
+            Navigator.pop(context);
+            return KeyEventResult.handled;
+          }
+          if (key == LogicalKeyboardKey.select ||
+              key == LogicalKeyboardKey.enter) {
+            _player.playOrPause();
+            return KeyEventResult.handled;
+          }
+          if (key == LogicalKeyboardKey.arrowRight) {
+            final pos = _player.state.position + const Duration(seconds: 10);
+            _player.seek(pos);
+            return KeyEventResult.handled;
+          }
+          if (key == LogicalKeyboardKey.arrowLeft) {
+            final pos = _player.state.position - const Duration(seconds: 10);
+            _player.seek(pos < Duration.zero ? Duration.zero : pos);
+            return KeyEventResult.handled;
+          }
+          return KeyEventResult.ignored;
+        },
+        child: Stack(
+          children: [
+            SizedBox.expand(
+              child: Video(controller: _videoController),
+            ),
           // Top bar with back button + title
           Positioned(
             top: 0,
@@ -120,6 +148,7 @@ class _VodPlayerScreenState extends State<VodPlayerScreen> {
             ),
           ),
         ],
+        ),
       ),
     );
   }

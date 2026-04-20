@@ -158,9 +158,29 @@ class _PlayerScreenState extends State<PlayerScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      body: GestureDetector(
-        onTap: _toggleOsd,
-        child: Stack(
+      body: Focus(
+        autofocus: true,
+        onKeyEvent: (_, event) {
+          if (event is! KeyDownEvent) return KeyEventResult.ignored;
+          final key = event.logicalKey;
+          if (key == LogicalKeyboardKey.goBack ||
+              key == LogicalKeyboardKey.escape ||
+              key == LogicalKeyboardKey.browserBack) {
+            Navigator.pop(context);
+            return KeyEventResult.handled;
+          }
+          if (key == LogicalKeyboardKey.select ||
+              key == LogicalKeyboardKey.enter ||
+              key == LogicalKeyboardKey.arrowUp ||
+              key == LogicalKeyboardKey.arrowDown) {
+            _toggleOsd();
+            return KeyEventResult.handled;
+          }
+          return KeyEventResult.ignored;
+        },
+        child: GestureDetector(
+          onTap: _toggleOsd,
+          child: Stack(
           children: [
             // ── Video ────────────────────────────────────────────────────
             SizedBox.expand(
@@ -227,6 +247,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
               ),
             ),
           ],
+        ),
         ),
       ),
     );

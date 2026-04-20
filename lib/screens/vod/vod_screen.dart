@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../providers/app_provider.dart';
@@ -53,20 +54,24 @@ class _VodScreenState extends State<VodScreen> {
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator(color: UhvaColors.primary))
-          : GridView.builder(
-              padding: const EdgeInsets.all(12),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 3,
-                childAspectRatio: 2 / 3,
-                crossAxisSpacing: 10,
-                mainAxisSpacing: 10,
-              ),
-              itemCount: vods.length,
-              itemBuilder: (_, i) => _VodCard(
-                vod: vods[i],
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => VodPlayerScreen(vod: vods[i])),
+          : FocusTraversalGroup(
+              policy: ReadingOrderTraversalPolicy(),
+              child: GridView.builder(
+                padding: const EdgeInsets.all(12),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 3,
+                  childAspectRatio: 2 / 3,
+                  crossAxisSpacing: 10,
+                  mainAxisSpacing: 10,
+                ),
+                itemCount: vods.length,
+                itemBuilder: (_, i) => _VodCard(
+                  vod: vods[i],
+                  autofocus: i == 0,
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => VodPlayerScreen(vod: vods[i])),
+                  ),
                 ),
               ),
             ),
@@ -74,71 +79,105 @@ class _VodScreenState extends State<VodScreen> {
   }
 }
 
-class _VodCard extends StatelessWidget {
+class _VodCard extends StatefulWidget {
   final VodStream vod;
   final VoidCallback onTap;
+  final bool autofocus;
 
-  const _VodCard({required this.vod, required this.onTap});
+  const _VodCard({required this.vod, required this.onTap, this.autofocus = false});
+
+  @override
+  State<_VodCard> createState() => _VodCardState();
+}
+
+class _VodCardState extends State<_VodCard> {
+  bool _focused = false;
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Expanded(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  vod.streamIcon.isNotEmpty
-                      ? CachedNetworkImage(
-                          imageUrl: vod.streamIcon,
-                          fit: BoxFit.cover,
-                          placeholder: (_, __) => Container(color: UhvaColors.surfaceAlt),
-                          errorWidget: (_, __, ___) => _placeholder(),
-                        )
-                      : _placeholder(),
-                  Positioned(
-                    bottom: 6,
-                    right: 6,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.7),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.star, color: Colors.amber, size: 9),
-                          const SizedBox(width: 2),
-                          Text(
-                            vod.rating5based.toStringAsFixed(1),
-                            style: const TextStyle(color: Colors.white, fontSize: 9),
-                          ),
-                        ],
+    return Focus(
+      autofocus: widget.autofocus,
+      onFocusChange: (f) => setState(() => _focused = f),
+      onKeyEvent: (_, event) {
+        if (event is! KeyDownEvent) return KeyEventResult.ignored;
+        if (event.logicalKey == LogicalKeyboardKey.select ||
+            event.logicalKey == LogicalKeyboardKey.enter) {
+          widget.onTap();
+          return KeyEventResult.handled;
+        }
+        return KeyEventResult.ignored;
+      },
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    widget.vod.streamIcon.isNotEmpty
+                        ? CachedNetworkImage(
+                            imageUrl: widget.vod.streamIcon,
+                            fit: BoxFit.cover,
+                            placeholder: (_, __) => Container(color: UhvaColors.surfaceAlt),
+                            errorWidget: (_, __, ___) => _placeholder(),
+                          )
+                        : _placeholder(),
+                    Positioned(
+                      bottom: 6,
+                      right: 6,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.7),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.star, color: Colors.amber, size: 9),
+                            const SizedBox(width: 2),
+                            Text(
+                              widget.vod.rating5based.toStringAsFixed(1),
+                              style: const TextStyle(color: Colors.white, fontSize: 9),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                    // Focus highlight border
+                    if (_focused)
+                      Positioned.fill(
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: UhvaColors.primary,
+                              width: 2.5,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 5),
-          Text(
-            vod.name,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              fontSize: 10,
-              color: UhvaColors.onSurface,
-              fontWeight: FontWeight.w500,
+            const SizedBox(height: 5),
+            Text(
+              widget.vod.name,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 10,
+                color: _focused ? UhvaColors.primaryLight : UhvaColors.onSurface,
+                fontWeight: FontWeight.w500,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

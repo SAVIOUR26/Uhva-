@@ -386,6 +386,24 @@ class _TvLiveScreenState extends State<_TvLiveScreen> {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<AppProvider>();
+
+    // Show loading if channels haven't arrived yet
+    if (provider.allChannels.isEmpty) {
+      return Scaffold(
+        backgroundColor: UhvaColors.background,
+        body: Column(
+          children: [
+            _buildTopBar(provider, loading: true),
+            const Expanded(
+              child: Center(
+                child: CircularProgressIndicator(color: UhvaColors.primary),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     final channels = _catId.isEmpty
         ? provider.allChannels
         : provider.allChannels.where((c) => c.categoryId == _catId).toList();
@@ -395,58 +413,7 @@ class _TvLiveScreenState extends State<_TvLiveScreen> {
       backgroundColor: UhvaColors.background,
       body: Column(
         children: [
-          // ── Top bar with back ──────────────────────────────────────
-          Container(
-            height: 64,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            decoration: const BoxDecoration(
-              border: Border(bottom: BorderSide(color: UhvaColors.divider)),
-            ),
-            child: Row(
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.arrow_back_ios_new,
-                      color: Colors.white70, size: 20),
-                  onPressed: () => Navigator.pop(context),
-                ),
-                const SizedBox(width: 8),
-                const Icon(Icons.live_tv_rounded,
-                    color: UhvaColors.liveRed, size: 20),
-                const SizedBox(width: 10),
-                const Text(
-                  'Live TV',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
-                  ),
-                ),
-                const Spacer(),
-                // Category pills
-                SizedBox(
-                  height: 36,
-                  child: ListView(
-                    scrollDirection: Axis.horizontal,
-                    shrinkWrap: true,
-                    children: [
-                      _TvPill(
-                          label: 'All',
-                          selected: _catId.isEmpty,
-                          onTap: () => setState(() => _catId = '')),
-                      ...provider.liveCategories.map((c) => _TvPill(
-                            label: c.categoryName,
-                            selected: _catId == c.categoryId,
-                            onTap: () =>
-                                setState(() => _catId = c.categoryId),
-                          )),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // ── Channel grid ──────────────────────────────────────────────
+          _buildTopBar(provider, loading: false),
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(24),
@@ -461,7 +428,8 @@ class _TvLiveScreenState extends State<_TvLiveScreen> {
                       child: ListView.separated(
                         scrollDirection: Axis.horizontal,
                         itemCount: recent.length,
-                        separatorBuilder: (_, __) => const SizedBox(width: 12),
+                        separatorBuilder: (_, __) =>
+                            const SizedBox(width: 12),
                         itemBuilder: (_, i) => _TvChannelCard(
                           channel: recent[i],
                           onSelect: _play,
@@ -473,23 +441,29 @@ class _TvLiveScreenState extends State<_TvLiveScreen> {
                   _SectionHeader(
                       title: _catId.isEmpty ? 'All channels' : ''),
                   const SizedBox(height: 12),
-                  GridView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: MediaQuery.of(context).size.width < 600
-                          ? 2
-                          : MediaQuery.of(context).size.width < 900
-                              ? 4
-                              : 6,
-                      childAspectRatio: 1.4,
-                      crossAxisSpacing: 12,
-                      mainAxisSpacing: 12,
-                    ),
-                    itemCount: channels.length,
-                    itemBuilder: (_, i) => _TvChannelCard(
-                      channel: channels[i],
-                      onSelect: _play,
+                  FocusTraversalGroup(
+                    policy: ReadingOrderTraversalPolicy(),
+                    child: GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate:
+                          SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount:
+                            MediaQuery.of(context).size.width < 600
+                                ? 2
+                                : MediaQuery.of(context).size.width < 900
+                                    ? 4
+                                    : 6,
+                        childAspectRatio: 1.4,
+                        crossAxisSpacing: 12,
+                        mainAxisSpacing: 12,
+                      ),
+                      itemCount: channels.length,
+                      itemBuilder: (_, i) => _TvChannelCard(
+                        channel: channels[i],
+                        autofocus: i == 0,
+                        onSelect: _play,
+                      ),
                     ),
                   ),
                 ],
@@ -501,10 +475,74 @@ class _TvLiveScreenState extends State<_TvLiveScreen> {
     );
   }
 
+  Widget _buildTopBar(AppProvider provider, {required bool loading}) {
+    return Container(
+      height: 64,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: const BoxDecoration(
+        border: Border(bottom: BorderSide(color: UhvaColors.divider)),
+      ),
+      child: Row(
+        children: [
+          Focus(
+            onKeyEvent: (_, event) {
+              if (event is KeyDownEvent &&
+                  (event.logicalKey == LogicalKeyboardKey.select ||
+                   event.logicalKey == LogicalKeyboardKey.enter)) {
+                Navigator.pop(context);
+                return KeyEventResult.handled;
+              }
+              return KeyEventResult.ignored;
+            },
+            child: IconButton(
+              icon: const Icon(Icons.arrow_back_ios_new,
+                  color: Colors.white70, size: 20),
+              onPressed: () => Navigator.pop(context),
+            ),
+          ),
+          const SizedBox(width: 8),
+          const Icon(Icons.live_tv_rounded,
+              color: UhvaColors.liveRed, size: 20),
+          const SizedBox(width: 10),
+          const Text(
+            'Live TV',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: Colors.white,
+            ),
+          ),
+          const Spacer(),
+          if (!loading)
+            SizedBox(
+              height: 36,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                shrinkWrap: true,
+                children: [
+                  _TvPill(
+                    label: 'All',
+                    selected: _catId.isEmpty,
+                    onTap: () => setState(() => _catId = ''),
+                  ),
+                  ...provider.liveCategories.map((c) => _TvPill(
+                        label: c.categoryName,
+                        selected: _catId == c.categoryId,
+                        onTap: () =>
+                            setState(() => _catId = c.categoryId),
+                      )),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
   void _play(LiveChannel ch) {
     context.read<AppProvider>().addToHistory(ch);
-    Navigator.push(
-        context, MaterialPageRoute(builder: (_) => PlayerScreen(channel: ch)));
+    Navigator.push(context,
+        MaterialPageRoute(builder: (_) => PlayerScreen(channel: ch)));
   }
 }
 
@@ -513,8 +551,13 @@ class _TvLiveScreenState extends State<_TvLiveScreen> {
 class _TvChannelCard extends StatefulWidget {
   final LiveChannel channel;
   final ValueChanged<LiveChannel> onSelect;
+  final bool autofocus;
 
-  const _TvChannelCard({required this.channel, required this.onSelect});
+  const _TvChannelCard({
+    required this.channel,
+    required this.onSelect,
+    this.autofocus = false,
+  });
 
   @override
   State<_TvChannelCard> createState() => _TvChannelCardState();
@@ -526,6 +569,7 @@ class _TvChannelCardState extends State<_TvChannelCard> {
   @override
   Widget build(BuildContext context) {
     return Focus(
+      autofocus: widget.autofocus,
       onFocusChange: (f) => setState(() => _focused = f),
       onKeyEvent: (_, event) {
         if (event is KeyDownEvent &&
@@ -626,31 +670,63 @@ class _ChannelLogoTv extends StatelessWidget {
   }
 }
 
-class _TvPill extends StatelessWidget {
+class _TvPill extends StatefulWidget {
   final String label;
   final bool selected;
   final VoidCallback onTap;
+
   const _TvPill(
       {required this.label, required this.selected, required this.onTap});
 
   @override
+  State<_TvPill> createState() => _TvPillState();
+}
+
+class _TvPillState extends State<_TvPill> {
+  bool _focused = false;
+
+  @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        margin: const EdgeInsets.only(right: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
-        decoration: BoxDecoration(
-          color: selected ? UhvaColors.primary : UhvaColors.surfaceAlt,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-            color: selected ? Colors.white : UhvaColors.onSurfaceMuted,
+    return Focus(
+      onFocusChange: (f) => setState(() => _focused = f),
+      onKeyEvent: (_, event) {
+        if (event is! KeyDownEvent) return KeyEventResult.ignored;
+        if (event.logicalKey == LogicalKeyboardKey.select ||
+            event.logicalKey == LogicalKeyboardKey.enter) {
+          widget.onTap();
+          return KeyEventResult.handled;
+        }
+        return KeyEventResult.ignored;
+      },
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          margin: const EdgeInsets.only(right: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
+          decoration: BoxDecoration(
+            color: widget.selected
+                ? UhvaColors.primary
+                : _focused
+                    ? UhvaColors.primary.withValues(alpha: 0.25)
+                    : UhvaColors.surfaceAlt,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: _focused ? UhvaColors.primary : Colors.transparent,
+              width: 1.5,
+            ),
+          ),
+          child: Text(
+            widget.label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: (widget.selected || _focused)
+                  ? FontWeight.w600
+                  : FontWeight.w400,
+              color: (widget.selected || _focused)
+                  ? Colors.white
+                  : UhvaColors.onSurfaceMuted,
+            ),
           ),
         ),
       ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+
 import '../../providers/app_provider.dart';
 import '../../models/models.dart';
 import '../../theme/app_theme.dart';
@@ -41,39 +42,49 @@ class _VodScreenState extends State<VodScreen> {
       backgroundColor: UhvaColors.background,
       appBar: AppBar(
         backgroundColor: UhvaColors.surface,
-        title: const Text('Movies', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+        title: const Text('Movies',
+            style: TextStyle(
+                color: Colors.white, fontWeight: FontWeight.w700)),
         leading: const BackButton(color: Colors.white70),
-        bottom: isLoading ? null : PreferredSize(
-          preferredSize: const Size.fromHeight(48),
-          child: CategoryBar(
-            categories: provider.vodCategories,
-            selectedId: _selectedCat,
-            onSelect: (id) => setState(() => _selectedCat = id),
-          ),
-        ),
       ),
       body: isLoading
-          ? const Center(child: CircularProgressIndicator(color: UhvaColors.primary))
-          : FocusTraversalGroup(
-              policy: ReadingOrderTraversalPolicy(),
-              child: GridView.builder(
-                padding: const EdgeInsets.all(12),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3,
-                  childAspectRatio: 2 / 3,
-                  crossAxisSpacing: 10,
-                  mainAxisSpacing: 10,
+          ? const Center(
+              child: CircularProgressIndicator(color: UhvaColors.primary))
+          : Column(
+              children: [
+                // Category pills — in body so D-pad "down" reaches the grid
+                CategoryBar(
+                  categories: provider.vodCategories,
+                  selectedId: _selectedCat,
+                  onSelect: (id) => setState(() => _selectedCat = id),
                 ),
-                itemCount: vods.length,
-                itemBuilder: (_, i) => _VodCard(
-                  vod: vods[i],
-                  autofocus: i == 0,
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => VodPlayerScreen(vod: vods[i])),
+                // Grid
+                Expanded(
+                  child: FocusTraversalGroup(
+                    policy: ReadingOrderTraversalPolicy(),
+                    child: GridView.builder(
+                      padding: const EdgeInsets.all(12),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 3,
+                        childAspectRatio: 2 / 3,
+                        crossAxisSpacing: 10,
+                        mainAxisSpacing: 10,
+                      ),
+                      itemCount: vods.length,
+                      itemBuilder: (_, i) => _VodCard(
+                        vod: vods[i],
+                        autofocus: i == 0,
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => VodPlayerScreen(vod: vods[i])),
+                        ),
+                      ),
+                    ),
                   ),
                 ),
-              ),
+              ],
             ),
     );
   }
@@ -84,7 +95,8 @@ class _VodCard extends StatefulWidget {
   final VoidCallback onTap;
   final bool autofocus;
 
-  const _VodCard({required this.vod, required this.onTap, this.autofocus = false});
+  const _VodCard(
+      {required this.vod, required this.onTap, this.autofocus = false});
 
   @override
   State<_VodCard> createState() => _VodCardState();
@@ -122,7 +134,8 @@ class _VodCardState extends State<_VodCard> {
                         ? CachedNetworkImage(
                             imageUrl: widget.vod.streamIcon,
                             fit: BoxFit.cover,
-                            placeholder: (_, __) => Container(color: UhvaColors.surfaceAlt),
+                            placeholder: (_, __) =>
+                                Container(color: UhvaColors.surfaceAlt),
                             errorWidget: (_, __, ___) => _placeholder(),
                           )
                         : _placeholder(),
@@ -130,7 +143,8 @@ class _VodCardState extends State<_VodCard> {
                       bottom: 6,
                       right: 6,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 5, vertical: 2),
                         decoration: BoxDecoration(
                           color: Colors.black.withValues(alpha: 0.7),
                           borderRadius: BorderRadius.circular(4),
@@ -138,26 +152,25 @@ class _VodCardState extends State<_VodCard> {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(Icons.star, color: Colors.amber, size: 9),
+                            const Icon(Icons.star,
+                                color: Colors.amber, size: 9),
                             const SizedBox(width: 2),
                             Text(
                               widget.vod.rating5based.toStringAsFixed(1),
-                              style: const TextStyle(color: Colors.white, fontSize: 9),
+                              style: const TextStyle(
+                                  color: Colors.white, fontSize: 9),
                             ),
                           ],
                         ),
                       ),
                     ),
-                    // Focus highlight border
                     if (_focused)
                       Positioned.fill(
                         child: DecoratedBox(
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(
-                              color: UhvaColors.primary,
-                              width: 2.5,
-                            ),
+                                color: UhvaColors.primary, width: 2.5),
                           ),
                         ),
                       ),
@@ -172,7 +185,9 @@ class _VodCardState extends State<_VodCard> {
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 fontSize: 10,
-                color: _focused ? UhvaColors.primaryLight : UhvaColors.onSurface,
+                color: _focused
+                    ? UhvaColors.primaryLight
+                    : UhvaColors.onSurface,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -186,7 +201,8 @@ class _VodCardState extends State<_VodCard> {
     return Container(
       color: UhvaColors.surfaceAlt,
       child: const Center(
-        child: Icon(Icons.movie_outlined, color: UhvaColors.onSurfaceHint, size: 28),
+        child: Icon(Icons.movie_outlined,
+            color: UhvaColors.onSurfaceHint, size: 28),
       ),
     );
   }

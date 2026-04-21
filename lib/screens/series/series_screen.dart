@@ -42,40 +42,48 @@ class _SeriesScreenState extends State<SeriesScreen> {
       backgroundColor: UhvaColors.background,
       appBar: AppBar(
         backgroundColor: UhvaColors.surface,
-        title: const Text('Series', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+        title: const Text('Series',
+            style: TextStyle(
+                color: Colors.white, fontWeight: FontWeight.w700)),
         leading: const BackButton(color: Colors.white70),
-        bottom: isLoading ? null : PreferredSize(
-          preferredSize: const Size.fromHeight(48),
-          child: CategoryBar(
-            categories: provider.seriesCategories,
-            selectedId: _selectedCat,
-            onSelect: (id) => setState(() => _selectedCat = id),
-          ),
-        ),
       ),
       body: isLoading
-          ? const Center(child: CircularProgressIndicator(color: UhvaColors.primary))
-          : FocusTraversalGroup(
-              policy: ReadingOrderTraversalPolicy(),
-              child: GridView.builder(
-                padding: const EdgeInsets.all(12),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3,
-                  childAspectRatio: 2 / 3,
-                  crossAxisSpacing: 10,
-                  mainAxisSpacing: 10,
+          ? const Center(
+              child: CircularProgressIndicator(color: UhvaColors.primary))
+          : Column(
+              children: [
+                CategoryBar(
+                  categories: provider.seriesCategories,
+                  selectedId: _selectedCat,
+                  onSelect: (id) => setState(() => _selectedCat = id),
                 ),
-                itemCount: items.length,
-                itemBuilder: (_, i) => _SeriesCard(
-                  series: items[i],
-                  autofocus: i == 0,
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (_) => SeriesDetailScreen(series: items[i])),
+                Expanded(
+                  child: FocusTraversalGroup(
+                    policy: ReadingOrderTraversalPolicy(),
+                    child: GridView.builder(
+                      padding: const EdgeInsets.all(12),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 3,
+                        childAspectRatio: 2 / 3,
+                        crossAxisSpacing: 10,
+                        mainAxisSpacing: 10,
+                      ),
+                      itemCount: items.length,
+                      itemBuilder: (_, i) => _SeriesCard(
+                        series: items[i],
+                        autofocus: i == 0,
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) =>
+                                  SeriesDetailScreen(series: items[i])),
+                        ),
+                      ),
+                    ),
                   ),
                 ),
-              ),
+              ],
             ),
     );
   }
@@ -86,7 +94,8 @@ class _SeriesCard extends StatefulWidget {
   final VoidCallback onTap;
   final bool autofocus;
 
-  const _SeriesCard({required this.series, required this.onTap, this.autofocus = false});
+  const _SeriesCard(
+      {required this.series, required this.onTap, this.autofocus = false});
 
   @override
   State<_SeriesCard> createState() => _SeriesCardState();
@@ -155,16 +164,13 @@ class _SeriesCardState extends State<_SeriesCard> {
                           ),
                         ),
                       ),
-                    // Focus highlight border
                     if (_focused)
                       Positioned.fill(
                         child: DecoratedBox(
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(
-                              color: UhvaColors.primary,
-                              width: 2.5,
-                            ),
+                                color: UhvaColors.primary, width: 2.5),
                           ),
                         ),
                       ),
@@ -179,7 +185,9 @@ class _SeriesCardState extends State<_SeriesCard> {
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 fontSize: 10,
-                color: _focused ? UhvaColors.primaryLight : UhvaColors.onSurface,
+                color: _focused
+                    ? UhvaColors.primaryLight
+                    : UhvaColors.onSurface,
                 fontWeight: FontWeight.w500,
               ),
             ),

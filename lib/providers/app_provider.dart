@@ -183,6 +183,18 @@ class AppProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> reloadLiveChannels() async {
+    if (_state == AppState.loading) return;
+    _setState(AppState.loading);
+    try {
+      await _loadContent();
+      _setState(AppState.loaded);
+    } catch (e) {
+      _error = e.toString().replaceAll('Exception: ', '');
+      _setState(AppState.error);
+    }
+  }
+
   Future<void> loadVod() async {
     if (_vodStreams.isNotEmpty) return;
     try {

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -15,7 +17,7 @@ import '../epg/epg_screen.dart';
 import '../search/search_screen.dart';
 import '../settings/settings_screen.dart';
 
-// ── Hub launcher (Star-IPTV style) ──────────────────────────────────────────
+// ── Hub launcher ─────────────────────────────────────────────────────────────
 
 class TvHomeScreen extends StatefulWidget {
   const TvHomeScreen({super.key});
@@ -41,12 +43,39 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
   }
 }
 
-class _TopBar extends StatelessWidget {
+class _TopBar extends StatefulWidget {
+  @override
+  State<_TopBar> createState() => _TopBarState();
+}
+
+class _TopBarState extends State<_TopBar> {
+  late DateTime _now;
+  late Timer _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _now = DateTime.now();
+    _timer = Timer.periodic(const Duration(seconds: 30),
+        (_) { if (mounted) setState(() => _now = DateTime.now()); });
+  }
+
+  @override
+  void dispose() {
+    _timer.cancel();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
-    final now = DateTime.now();
-    final time =
-        '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
+    final h = _now.hour.toString().padLeft(2, '0');
+    final m = _now.minute.toString().padLeft(2, '0');
+    const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+    const months = ['Jan','Feb','Mar','Apr','May','Jun',
+                    'Jul','Aug','Sep','Oct','Nov','Dec'];
+    final dateStr =
+        '$h:$m  ${days[_now.weekday - 1]}, ${_now.day} ${months[_now.month - 1]} ${_now.year}';
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
       child: Row(
@@ -54,10 +83,10 @@ class _TopBar extends StatelessWidget {
           UhvaLogo(size: 32, horizontal: true),
           const Spacer(),
           Text(
-            time,
+            dateStr,
             style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
               color: UhvaColors.onSurfaceMuted,
               fontFeatures: [FontFeature.tabularFigures()],
             ),
@@ -86,7 +115,6 @@ class _HubMenuState extends State<_HubMenu> {
   void initState() {
     super.initState();
     _nodes = List.generate(7, (_) => FocusNode());
-    // Auto-focus Live TV when hub loads
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _nodes[0].requestFocus();
     });
@@ -104,16 +132,15 @@ class _HubMenuState extends State<_HubMenu> {
 
   @override
   Widget build(BuildContext context) {
-    // Neighbour map: each entry = [left, right, up, down] node index (-1 = none)
+    // Neighbour map: [left, right, up, down]  (-1 = none)
     const nav = [
-      // idx  left  right  up   down
-      /* 0  */ [2,    1,    -1,   3],  // Live TV
-      /* 1  */ [0,    2,    -1,   4],  // Movies
-      /* 2  */ [1,    0,    -1,   5],  // Series
-      /* 3  */ [6,    4,     0,  -1],  // Catch Up
-      /* 4  */ [3,    5,     1,  -1],  // Radio
-      /* 5  */ [4,    6,     2,  -1],  // Search
-      /* 6  */ [5,    3,     2,  -1],  // Settings
+      /* 0 Live TV   */ [2,  1,  -1,  3],
+      /* 1 Movies    */ [0,  2,  -1,  4],
+      /* 2 Series    */ [1,  0,  -1,  5],
+      /* 3 Catch Up  */ [6,  4,   0, -1],
+      /* 4 Radio     */ [3,  5,   1, -1],
+      /* 5 Search    */ [4,  6,   2, -1],
+      /* 6 Settings  */ [5,  3,   2, -1],
     ];
 
     void onKey(int idx, LogicalKeyboardKey key) {
@@ -127,19 +154,19 @@ class _HubMenuState extends State<_HubMenu> {
     }
 
     final isPhone = MediaQuery.of(context).size.shortestSide < 600;
-    final mainSize  = isPhone ? 100.0 : 148.0;
-    final mainIcon  = isPhone ? 36.0  : 52.0;
-    final subSize   = isPhone ? 70.0  : 96.0;
-    final subIcon   = isPhone ? 24.0  : 32.0;
-    final mainGap   = isPhone ? 20.0  : 32.0;
-    final subGap    = isPhone ? 16.0  : 28.0;
-    final rowGap    = isPhone ? 24.0  : 36.0;
+    final mainSize = isPhone ? 100.0 : 148.0;
+    final mainIcon = isPhone ? 36.0  : 52.0;
+    final subSize  = isPhone ? 70.0  : 96.0;
+    final subIcon  = isPhone ? 24.0  : 32.0;
+    final mainGap  = isPhone ? 20.0  : 32.0;
+    final subGap   = isPhone ? 16.0  : 28.0;
+    final rowGap   = isPhone ? 24.0  : 36.0;
 
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // ── Main row ──────────────────────────────────────────────────
+          // ── Main row ──────────────────────────────────────────────
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -183,7 +210,7 @@ class _HubMenuState extends State<_HubMenu> {
 
           SizedBox(height: rowGap),
 
-          // ── Sub row ───────────────────────────────────────────────────
+          // ── Sub row ───────────────────────────────────────────────
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -307,8 +334,10 @@ class _HubButtonState extends State<_HubButton>
           return KeyEventResult.handled;
         }
         final arrows = {
-          LogicalKeyboardKey.arrowLeft, LogicalKeyboardKey.arrowRight,
-          LogicalKeyboardKey.arrowUp,   LogicalKeyboardKey.arrowDown,
+          LogicalKeyboardKey.arrowLeft,
+          LogicalKeyboardKey.arrowRight,
+          LogicalKeyboardKey.arrowUp,
+          LogicalKeyboardKey.arrowDown,
         };
         if (arrows.contains(event.logicalKey)) {
           widget.onKey(event.logicalKey);
@@ -316,62 +345,67 @@ class _HubButtonState extends State<_HubButton>
         }
         return KeyEventResult.ignored;
       },
-        child: GestureDetector(
-          onTap: widget.onSelect,
-          child: ScaleTransition(
-            scale: _scale,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 150),
-                  width: widget.size,
-                  height: widget.size,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: _focused
-                        ? widget.color.withValues(alpha: 0.25)
-                        : UhvaColors.card,
-                    border: Border.all(
-                      color: _focused ? widget.color : UhvaColors.divider,
-                      width: _focused ? 3 : 1.5,
-                    ),
-                    boxShadow: _focused
-                        ? [
-                            BoxShadow(
-                              color: widget.color.withValues(alpha: 0.45),
-                              blurRadius: 28,
-                              spreadRadius: 2,
-                            )
-                          ]
-                        : [],
+      child: GestureDetector(
+        onTap: widget.onSelect,
+        child: ScaleTransition(
+          scale: _scale,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 150),
+                width: widget.size,
+                height: widget.size,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: _focused
+                      ? widget.color.withValues(alpha: 0.25)
+                      : UhvaColors.card,
+                  border: Border.all(
+                    color: _focused ? widget.color : UhvaColors.divider,
+                    width: _focused ? 3 : 1.5,
                   ),
-                  child: Icon(
-                    widget.icon,
-                    size: widget.iconSize,
-                    color: _focused ? widget.color : UhvaColors.onSurfaceMuted,
-                  ),
+                  boxShadow: _focused
+                      ? [
+                          BoxShadow(
+                            color: widget.color.withValues(alpha: 0.45),
+                            blurRadius: 28,
+                            spreadRadius: 2,
+                          )
+                        ]
+                      : [],
                 ),
-                const SizedBox(height: 12),
-                Text(
-                  widget.label,
-                  style: TextStyle(
-                    fontSize: widget.size >= 130 ? 15 : 12,
-                    fontWeight:
-                        _focused ? FontWeight.w700 : FontWeight.w400,
-                    color: _focused ? Colors.white : UhvaColors.onSurfaceMuted,
-                    letterSpacing: 0.3,
-                  ),
+                child: Icon(
+                  widget.icon,
+                  size: widget.iconSize,
+                  color: _focused ? widget.color : UhvaColors.onSurfaceMuted,
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                widget.label,
+                style: TextStyle(
+                  fontSize: widget.size >= 130 ? 15 : 12,
+                  fontWeight:
+                      _focused ? FontWeight.w700 : FontWeight.w400,
+                  color: _focused ? Colors.white : UhvaColors.onSurfaceMuted,
+                  letterSpacing: 0.3,
+                ),
+              ),
+            ],
           ),
         ),
+      ),
     );
   }
 }
 
-// ── Full-screen Live TV (pushed from hub) ────────────────────────────────────
+// ── Live TV screen (pushed from hub) ────────────────────────────────────────
+//
+// Layout: top bar + scrollable list of category rows.
+// Each row: fixed-width label on the left, horizontal channel cards on the right.
+// D-pad: up/down moves between rows, left/right moves within a row.
+// Scrollable.ensureVisible() is called on focus so the card scrolls into view.
 
 class _TvLiveScreen extends StatefulWidget {
   const _TvLiveScreen();
@@ -381,114 +415,82 @@ class _TvLiveScreen extends StatefulWidget {
 }
 
 class _TvLiveScreenState extends State<_TvLiveScreen> {
-  String _catId = '';
-
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<AppProvider>();
 
-    // Show loading if channels haven't arrived yet
+    // ── Loading / empty state ─────────────────────────────────────────
     if (provider.allChannels.isEmpty) {
+      final isLoading = provider.state == AppState.loading;
       return Scaffold(
         backgroundColor: UhvaColors.background,
-        body: Column(
-          children: [
-            _buildTopBar(provider, loading: true),
-            const Expanded(
-              child: Center(
-                child: CircularProgressIndicator(color: UhvaColors.primary),
+        body: SafeArea(
+          child: Column(
+            children: [
+              _buildTopBar(),
+              Expanded(
+                child: isLoading
+                    ? const Center(
+                        child: CircularProgressIndicator(
+                            color: UhvaColors.primary))
+                    : Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.live_tv_outlined,
+                                color: UhvaColors.onSurfaceMuted, size: 56),
+                            const SizedBox(height: 16),
+                            const Text('No channels available',
+                                style: TextStyle(
+                                    color: UhvaColors.onSurface,
+                                    fontSize: 15)),
+                            const SizedBox(height: 16),
+                            TextButton.icon(
+                              onPressed: () => provider.reloadLiveChannels(),
+                              icon: const Icon(Icons.refresh,
+                                  color: UhvaColors.primaryLight),
+                              label: const Text('Retry',
+                                  style: TextStyle(
+                                      color: UhvaColors.primaryLight)),
+                            ),
+                          ],
+                        ),
+                      ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       );
     }
 
-    final channels = _catId.isEmpty
-        ? provider.allChannels
-        : provider.allChannels.where((c) => c.categoryId == _catId).toList();
-    final recent = provider.recentChannels;
-
+    // ── Full channel guide ────────────────────────────────────────────
     return Scaffold(
       backgroundColor: UhvaColors.background,
-      body: Column(
-        children: [
-          _buildTopBar(provider, loading: false),
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (recent.isNotEmpty) ...[
-                    _SectionHeader(title: 'Continue watching'),
-                    const SizedBox(height: 12),
-                    SizedBox(
-                      height: 110,
-                      child: ListView.separated(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: recent.length,
-                        separatorBuilder: (_, __) =>
-                            const SizedBox(width: 12),
-                        itemBuilder: (_, i) => _TvChannelCard(
-                          channel: recent[i],
-                          onSelect: _play,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 28),
-                  ],
-                  _SectionHeader(
-                      title: _catId.isEmpty ? 'All channels' : ''),
-                  const SizedBox(height: 12),
-                  FocusTraversalGroup(
-                    policy: ReadingOrderTraversalPolicy(),
-                    child: GridView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      gridDelegate:
-                          SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount:
-                            MediaQuery.of(context).size.width < 600
-                                ? 2
-                                : MediaQuery.of(context).size.width < 900
-                                    ? 4
-                                    : 6,
-                        childAspectRatio: 1.4,
-                        crossAxisSpacing: 12,
-                        mainAxisSpacing: 12,
-                      ),
-                      itemCount: channels.length,
-                      itemBuilder: (_, i) => _TvChannelCard(
-                        channel: channels[i],
-                        autofocus: i == 0,
-                        onSelect: _play,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
+      body: SafeArea(
+        child: Column(
+          children: [
+            _buildTopBar(),
+            Expanded(child: _buildCategoryRows(provider)),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildTopBar(AppProvider provider, {required bool loading}) {
+  Widget _buildTopBar() {
     return Container(
-      height: 64,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      height: 60,
+      padding: const EdgeInsets.symmetric(horizontal: 20),
       decoration: const BoxDecoration(
         border: Border(bottom: BorderSide(color: UhvaColors.divider)),
       ),
       child: Row(
         children: [
           Focus(
-            onKeyEvent: (_, event) {
-              if (event is KeyDownEvent &&
-                  (event.logicalKey == LogicalKeyboardKey.select ||
-                   event.logicalKey == LogicalKeyboardKey.enter)) {
+            onKeyEvent: (_, ev) {
+              if (ev is KeyDownEvent &&
+                  (ev.logicalKey == LogicalKeyboardKey.select ||
+                   ev.logicalKey == LogicalKeyboardKey.enter)) {
                 Navigator.pop(context);
                 return KeyEventResult.handled;
               }
@@ -500,53 +502,202 @@ class _TvLiveScreenState extends State<_TvLiveScreen> {
               onPressed: () => Navigator.pop(context),
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 6),
           const Icon(Icons.live_tv_rounded,
               color: UhvaColors.liveRed, size: 20),
-          const SizedBox(width: 10),
+          const SizedBox(width: 8),
           const Text(
             'Live TV',
             style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              color: Colors.white,
-            ),
+                fontSize: 17, fontWeight: FontWeight.w700, color: Colors.white),
           ),
           const Spacer(),
-          if (!loading)
-            SizedBox(
-              height: 36,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                shrinkWrap: true,
-                children: [
-                  _TvPill(
-                    label: 'All',
-                    selected: _catId.isEmpty,
-                    onTap: () => setState(() => _catId = ''),
-                  ),
-                  ...provider.liveCategories.map((c) => _TvPill(
-                        label: c.categoryName,
-                        selected: _catId == c.categoryId,
-                        onTap: () =>
-                            setState(() => _catId = c.categoryId),
-                      )),
-                ],
-              ),
-            ),
+          const _LiveClock(),
+          const SizedBox(width: 12),
         ],
       ),
     );
   }
 
+  Widget _buildCategoryRows(AppProvider provider) {
+    final rows = <_CategoryRow>[];
+    bool firstSet = false;
+
+    // Favourites
+    final favs = provider.favouriteChannels;
+    if (favs.isNotEmpty) {
+      rows.add(_CategoryRow(
+        label: 'FAVORITES',
+        channels: favs,
+        onSelect: _play,
+        autofocusFirst: !firstSet,
+      ));
+      firstSet = true;
+    }
+
+    // Continue watching
+    final recent = provider.recentChannels;
+    if (recent.isNotEmpty) {
+      rows.add(_CategoryRow(
+        label: 'CONTINUE WATCHING',
+        channels: recent,
+        onSelect: _play,
+        autofocusFirst: !firstSet,
+      ));
+      firstSet = true;
+    }
+
+    // One row per category
+    for (final cat in provider.liveCategories) {
+      final chs = provider.allChannels
+          .where((c) => c.categoryId == cat.categoryId)
+          .toList();
+      if (chs.isEmpty) continue;
+      rows.add(_CategoryRow(
+        label: '${cat.categoryName.toUpperCase()}  (${chs.length})',
+        channels: chs,
+        onSelect: _play,
+        autofocusFirst: !firstSet,
+      ));
+      firstSet = true;
+    }
+
+    // Fallback when no categories returned
+    if (rows.isEmpty) {
+      rows.add(_CategoryRow(
+        label: 'ALL CHANNELS  (${provider.allChannels.length})',
+        channels: provider.allChannels,
+        onSelect: _play,
+        autofocusFirst: true,
+      ));
+    }
+
+    return ListView.separated(
+      padding: const EdgeInsets.only(top: 12, bottom: 32),
+      itemCount: rows.length,
+      separatorBuilder: (_, __) =>
+          const Divider(height: 1, color: UhvaColors.divider, indent: 20),
+      itemBuilder: (_, i) => rows[i],
+    );
+  }
+
   void _play(LiveChannel ch) {
     context.read<AppProvider>().addToHistory(ch);
-    Navigator.push(context,
-        MaterialPageRoute(builder: (_) => PlayerScreen(channel: ch)));
+    Navigator.push(
+        context, MaterialPageRoute(builder: (_) => PlayerScreen(channel: ch)));
   }
 }
 
-// ── Shared channel card ──────────────────────────────────────────────────────
+// ── Live clock ────────────────────────────────────────────────────────────────
+
+class _LiveClock extends StatefulWidget {
+  const _LiveClock();
+
+  @override
+  State<_LiveClock> createState() => _LiveClockState();
+}
+
+class _LiveClockState extends State<_LiveClock> {
+  late DateTime _now;
+  late Timer _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _now = DateTime.now();
+    _timer = Timer.periodic(const Duration(seconds: 30),
+        (_) { if (mounted) setState(() => _now = DateTime.now()); });
+  }
+
+  @override
+  void dispose() {
+    _timer.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final h = _now.hour.toString().padLeft(2, '0');
+    final m = _now.minute.toString().padLeft(2, '0');
+    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const months = ['Jan','Feb','Mar','Apr','May','Jun',
+                    'Jul','Aug','Sep','Oct','Nov','Dec'];
+    return Text(
+      '$h:$m  ${days[_now.weekday - 1]}, ${_now.day} ${months[_now.month - 1]} ${_now.year}',
+      style: const TextStyle(
+        fontSize: 12,
+        color: UhvaColors.onSurfaceMuted,
+        fontFeatures: [FontFeature.tabularFigures()],
+      ),
+    );
+  }
+}
+
+// ── Category row: label on left, horizontal channel cards on right ────────────
+
+class _CategoryRow extends StatelessWidget {
+  final String label;
+  final List<LiveChannel> channels;
+  final ValueChanged<LiveChannel> onSelect;
+  final bool autofocusFirst;
+
+  const _CategoryRow({
+    required this.label,
+    required this.channels,
+    required this.onSelect,
+    this.autofocusFirst = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // ── Left label column (fixed width) ──────────────────────
+          SizedBox(
+            width: 180,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: UhvaColors.onSurfaceMuted,
+                  letterSpacing: 0.7,
+                  height: 1.5,
+                ),
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ),
+          // ── Horizontal channel cards ──────────────────────────────
+          Expanded(
+            child: SizedBox(
+              height: 120,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.only(right: 20),
+                itemCount: channels.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 10),
+                itemBuilder: (_, i) => _TvChannelCard(
+                  channel: channels[i],
+                  onSelect: onSelect,
+                  autofocus: autofocusFirst && i == 0,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Channel card ──────────────────────────────────────────────────────────────
 
 class _TvChannelCard extends StatefulWidget {
   final LiveChannel channel;
@@ -566,15 +717,32 @@ class _TvChannelCard extends StatefulWidget {
 class _TvChannelCardState extends State<_TvChannelCard> {
   bool _focused = false;
 
+  void _onFocusChange(bool focused) {
+    setState(() => _focused = focused);
+    if (focused) {
+      // Scroll both the horizontal row and outer vertical list so card is visible
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          Scrollable.ensureVisible(
+            context,
+            alignment: 0.5,
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeOut,
+          );
+        }
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Focus(
       autofocus: widget.autofocus,
-      onFocusChange: (f) => setState(() => _focused = f),
-      onKeyEvent: (_, event) {
-        if (event is KeyDownEvent &&
-            (event.logicalKey == LogicalKeyboardKey.select ||
-             event.logicalKey == LogicalKeyboardKey.enter)) {
+      onFocusChange: _onFocusChange,
+      onKeyEvent: (_, ev) {
+        if (ev is KeyDownEvent &&
+            (ev.logicalKey == LogicalKeyboardKey.select ||
+             ev.logicalKey == LogicalKeyboardKey.enter)) {
           widget.onSelect(widget.channel);
           return KeyEventResult.handled;
         }
@@ -584,29 +752,40 @@ class _TvChannelCardState extends State<_TvChannelCard> {
         onTap: () => widget.onSelect(widget.channel),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 150),
+          width: 160,
           decoration: BoxDecoration(
             color: _focused
-                ? UhvaColors.primary.withValues(alpha: 0.2)
+                ? UhvaColors.primary.withValues(alpha: 0.18)
                 : UhvaColors.card,
             borderRadius: BorderRadius.circular(10),
             border: Border.all(
               color: _focused ? UhvaColors.primary : UhvaColors.divider,
-              width: _focused ? 2 : 0.5,
+              width: _focused ? 2.0 : 0.5,
             ),
+            boxShadow: _focused
+                ? [
+                    BoxShadow(
+                      color: UhvaColors.primary.withValues(alpha: 0.3),
+                      blurRadius: 14,
+                      spreadRadius: 1,
+                    )
+                  ]
+                : [],
           ),
           padding: const EdgeInsets.all(10),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               _ChannelLogoTv(
-                  url: widget.channel.streamIcon, name: widget.channel.name),
-              const SizedBox(height: 6),
+                url: widget.channel.streamIcon,
+                name: widget.channel.name,
+              ),
+              const SizedBox(height: 8),
               Text(
                 widget.channel.name,
                 style: TextStyle(
                   fontSize: 11,
-                  fontWeight:
-                      _focused ? FontWeight.w600 : FontWeight.w400,
+                  fontWeight: _focused ? FontWeight.w600 : FontWeight.w400,
                   color: _focused
                       ? UhvaColors.primaryLight
                       : UhvaColors.onSurface,
@@ -634,6 +813,8 @@ class _TvChannelCardState extends State<_TvChannelCard> {
   }
 }
 
+// ── Channel logo / initials fallback ─────────────────────────────────────────
+
 class _ChannelLogoTv extends StatelessWidget {
   final String url;
   final String name;
@@ -642,112 +823,32 @@ class _ChannelLogoTv extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 36,
-      width: 50,
+      height: 40,
+      width: 60,
       child: url.isNotEmpty
           ? CachedNetworkImage(
               imageUrl: url,
               fit: BoxFit.contain,
-              placeholder: (_, __) => _ini(),
-              errorWidget: (_, __, ___) => _ini(),
+              placeholder: (_, __) => _initials(),
+              errorWidget: (_, __, ___) => _initials(),
             )
-          : _ini(),
+          : _initials(),
     );
   }
 
-  Widget _ini() {
-    final p = name.trim().split(' ');
-    final t = p.length >= 2
-        ? '${p[0][0]}${p[1][0]}'
+  Widget _initials() {
+    final parts = name.trim().split(' ');
+    final t = parts.length >= 2
+        ? '${parts[0][0]}${parts[1][0]}'
         : name.substring(0, name.length.clamp(0, 2));
     return Center(
-      child: Text(t.toUpperCase(),
-          style: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w700,
-              color: UhvaColors.primary)),
-    );
-  }
-}
-
-class _TvPill extends StatefulWidget {
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  const _TvPill(
-      {required this.label, required this.selected, required this.onTap});
-
-  @override
-  State<_TvPill> createState() => _TvPillState();
-}
-
-class _TvPillState extends State<_TvPill> {
-  bool _focused = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return Focus(
-      onFocusChange: (f) => setState(() => _focused = f),
-      onKeyEvent: (_, event) {
-        if (event is! KeyDownEvent) return KeyEventResult.ignored;
-        if (event.logicalKey == LogicalKeyboardKey.select ||
-            event.logicalKey == LogicalKeyboardKey.enter) {
-          widget.onTap();
-          return KeyEventResult.handled;
-        }
-        return KeyEventResult.ignored;
-      },
-      child: GestureDetector(
-        onTap: widget.onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          margin: const EdgeInsets.only(right: 8),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
-          decoration: BoxDecoration(
-            color: widget.selected
-                ? UhvaColors.primary
-                : _focused
-                    ? UhvaColors.primary.withValues(alpha: 0.25)
-                    : UhvaColors.surfaceAlt,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: _focused ? UhvaColors.primary : Colors.transparent,
-              width: 1.5,
-            ),
-          ),
-          child: Text(
-            widget.label,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: (widget.selected || _focused)
-                  ? FontWeight.w600
-                  : FontWeight.w400,
-              color: (widget.selected || _focused)
-                  ? Colors.white
-                  : UhvaColors.onSurfaceMuted,
-            ),
-          ),
+      child: Text(
+        t.toUpperCase(),
+        style: const TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.w700,
+          color: UhvaColors.primary,
         ),
-      ),
-    );
-  }
-}
-
-class _SectionHeader extends StatelessWidget {
-  final String title;
-  const _SectionHeader({required this.title});
-
-  @override
-  Widget build(BuildContext context) {
-    if (title.isEmpty) return const SizedBox.shrink();
-    return Text(
-      title,
-      style: const TextStyle(
-        fontSize: 13,
-        fontWeight: FontWeight.w600,
-        color: UhvaColors.onSurfaceMuted,
-        letterSpacing: 0.5,
       ),
     );
   }

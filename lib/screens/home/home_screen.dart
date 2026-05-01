@@ -32,9 +32,17 @@ class _HomeScreenState extends State<HomeScreen> {
     await provider.addToHistory(channel);
     setState(() => _nowPlaying = channel);
     if (!mounted) return;
+    final allCh = provider.filteredChannels;
+    final idx = allCh.indexWhere((c) => c.streamId == channel.streamId);
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => PlayerScreen(channel: channel)),
+      MaterialPageRoute(
+        builder: (_) => PlayerScreen(
+          channel: channel,
+          channels: allCh,
+          channelIndex: idx < 0 ? 0 : idx,
+        ),
+      ),
     ).then((_) => setState(() => _nowPlaying = channel));
   }
 

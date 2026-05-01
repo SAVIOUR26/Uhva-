@@ -582,9 +582,20 @@ class _TvLiveScreenState extends State<_TvLiveScreen> {
   }
 
   void _play(LiveChannel ch) {
-    context.read<AppProvider>().addToHistory(ch);
+    final provider = context.read<AppProvider>();
+    provider.addToHistory(ch);
+    final allCh = provider.allChannels;
+    final idx = allCh.indexWhere((c) => c.streamId == ch.streamId);
     Navigator.push(
-        context, MaterialPageRoute(builder: (_) => PlayerScreen(channel: ch)));
+      context,
+      MaterialPageRoute(
+        builder: (_) => PlayerScreen(
+          channel: ch,
+          channels: allCh,
+          channelIndex: idx < 0 ? 0 : idx,
+        ),
+      ),
+    );
   }
 }
 
